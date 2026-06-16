@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import logging
 
 
 
@@ -49,6 +50,7 @@ from organizations.models import Organization
 
 import os
 
+logger = logging.getLogger(__name__)
 
 
 
@@ -287,47 +289,36 @@ class CheckoutView(APIView):
 
             price_id = price_map.get(data["tier"], "")
 
-            if not org.stripe_customer_id:
+            try:
+                if not org.stripe_customer_id:
+                    customer = client.customers.create(
+                        params={
+                            "email": request.user.email,
+                            "name": org.name,
+                            "metadata": {"organization_id": str(org.id), "country": org.country},
+                        }
+                    )
 
-                customer = client.customers.create(
+                    org.stripe_customer_id = customer.id
+                    org.save(update_fields=["stripe_customer_id"])
 
+                session = client.checkout.sessions.create(
                     params={
-
-                        "email": request.user.email,
-
-                        "name": org.name,
-
-                        "metadata": {"organization_id": str(org.id), "country": org.country},
-
+                        "customer": org.stripe_customer_id,
+                        "mode": "subscription",
+                        "line_items": [{"price": price_id, "quantity": 1}],
+                        "success_url": f"{settings.CLIENT_URL}/dashboard?checkout=success&rail={rail}",
+                        "cancel_url": f"{settings.CLIENT_URL}/dashboard?checkout=canceled",
+                        "metadata": {"organization_id": str(org.id), "rail": rail, "country": org.country},
+                        "subscription_data": {"metadata": {"organization_id": str(org.id)}},
                     }
-
                 )
-
-                org.stripe_customer_id = customer.id
-
-                org.save(update_fields=["stripe_customer_id"])
-
-            session = client.checkout.sessions.create(
-
-                params={
-
-                    "customer": org.stripe_customer_id,
-
-                    "mode": "subscription",
-
-                    "line_items": [{"price": price_id, "quantity": 1}],
-
-                    "success_url": f"{settings.CLIENT_URL}/dashboard?checkout=success&rail={rail}",
-
-                    "cancel_url": f"{settings.CLIENT_URL}/dashboard?checkout=canceled",
-
-                    "metadata": {"organization_id": str(org.id), "rail": rail, "country": org.country},
-
-                    "subscription_data": {"metadata": {"organization_id": str(org.id)}},
-
-                }
-
-            )
+            except Exception as exc:
+                logger.warning("Stripe checkout failed for org %s: %s", org.id, exc)
+                return Response(
+                    {"error": "Stripe checkout unavailable. Verify Stripe credentials and retry."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
 
             return Response({"url": session.url, "provider": "STRIPE", "rail": rail})
 

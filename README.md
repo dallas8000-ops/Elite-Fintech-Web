@@ -1,6 +1,6 @@
 # Elite Fintech Systems
 
-Enterprise-grade, multi-tenant billing and operations platform for **East African fintech teams**.
+Production-oriented, multi-tenant billing and operations platform for **East African fintech teams**.
 
 Built with Django + React, this project supports regional onboarding, daily FX-based local pricing, real-time billing events, and infrastructure patterns that fit a fixed monthly VPS budget.
 
@@ -22,8 +22,21 @@ Elite Fintech Systems is designed for:
 - Country-aware onboarding for East Africa (`UG`, `KE`, `RW`, `TZ`)
 - Billing plans with daily FX conversion from USD anchors to local currencies
 - Real-time billing and payment activity over WebSockets
-- Stripe + Flutterwave/PayFast routing logic (market-dependent)
+- Mobile-money-first routing (Flutterwave/Pesapal path), with Stripe as optional fallback for international or Euro-linked card flows
 - Docker Compose deployment for fixed-cost hosting
+
+## Implementation status (honest matrix)
+
+| Area | Status | Notes |
+|---|---|---|
+| Multi-tenant auth + RBAC | Implemented | JWT with org context, owner/admin/member/viewer roles |
+| East Africa onboarding | Implemented | Country + region validation for UG/KE/RW/TZ |
+| Daily FX pricing engine | Implemented | USD anchors -> UGX/KES/RWF/TZS via stored snapshots |
+| Real-time billing feed | Implemented | Django Channels WebSocket endpoint |
+| Stripe checkout | Implemented (secondary) | Optional fallback for international card use-cases; not the primary EA rail |
+| PayFast checkout (ZA legacy) | Implemented | Legacy South Africa flow only |
+| Flutterwave checkout (EA) | Planned / partial | Provider path and config checks exist, full checkout flow is pending |
+| Automated tests | Baseline implemented | Core auth/RBAC/pricing tests included; coverage is not complete |
 
 ## East Africa first, South Africa legacy
 
@@ -217,9 +230,9 @@ docker compose ps
 
 ## Roadmap priorities
 
-- Complete production Flutterwave checkout integration for EA
+- Complete Flutterwave checkout integration for EA
 - Harden webhook verification and retry workflows
-- Add full test coverage for pricing, regional validation, and checkout paths
+- Expand test coverage for pricing, regional validation, and checkout paths
 - Expand tenant analytics and reconciliation tooling
 
 ## Security and compliance notes
