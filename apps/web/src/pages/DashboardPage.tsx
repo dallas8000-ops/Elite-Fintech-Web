@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
 import { useAuth } from "../context/AuthContext";
 import { useRealtime } from "../hooks/useRealtime";
 import PaymentLandscape, { SettlementBadge } from "../components/PaymentLandscape";
+import DataSourcePanel from "../components/DataSourcePanel";
 import SmartFeedAssistant from "../components/SmartFeedAssistant";
 import {
   api,
@@ -198,6 +199,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <DataSourcePanel />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section className="bg-surface-raised border border-border rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
@@ -280,7 +283,14 @@ export default function DashboardPage() {
             )}
 
             <div className="bg-surface-raised border border-border rounded-xl p-6">
-              <h2 className="font-semibold mb-4">Compliance</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold">Compliance</h2>
+                {canManage && (
+                  <Link to="/settings" className="text-xs text-brand-400 hover:text-brand-300">
+                    Edit
+                  </Link>
+                )}
+              </div>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted">Company reg</dt>

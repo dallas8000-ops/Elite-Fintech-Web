@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
+import { getAdminUrl } from "../lib/api";
 function linkClass({ isActive }: { isActive: boolean }) {
   return [
     "transition-colors",
@@ -9,8 +9,9 @@ function linkClass({ isActive }: { isActive: boolean }) {
 }
 
 export default function AppNavbar() {
-  const { user, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const navigate = useNavigate();
+  const canManage = role === "OWNER" || role === "ADMIN";
 
   const handleSignOut = () => {
     logout();
@@ -36,9 +37,22 @@ export default function AppNavbar() {
               <NavLink to="/dashboard" className={linkClass}>
                 Dashboard
               </NavLink>
+              <NavLink to="/settings" className={linkClass}>
+                Settings
+              </NavLink>
               <NavLink to="/setup" className={linkClass}>
                 Domain setup
               </NavLink>
+              {canManage && (
+                <a
+                  href={getAdminUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted hover:text-white transition-colors"
+                >
+                  Admin ↗
+                </a>
+              )}
               <button
                 type="button"
                 onClick={handleSignOut}

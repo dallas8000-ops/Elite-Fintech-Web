@@ -55,3 +55,7 @@ class CanInviteMembers(RequirePermission):
 
 class CanRemoveMembers(RequirePermission):
     required_permission = "members:remove"
+
+
+class CanManageOrg(RequirePermission):
+    required_permission = "org:manage"

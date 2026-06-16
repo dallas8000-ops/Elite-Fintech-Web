@@ -4,13 +4,50 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import User
-from accounts.permissions import CanInviteMembers, CanReadBilling, CanRemoveMembers, HasTenantContext
-from organizations.models import Membership, Role
-from organizations.serializers import InviteMemberSerializer, MemberSerializer, UpdateRoleSerializer
+from accounts.permissions import (
+    CanInviteMembers,
+    CanManageOrg,
+    CanReadBilling,
+    CanRemoveMembers,
+    HasTenantContext,
+)
+from organizations.models import Membership, Organization, Role
+from organizations.serializers import (
+    InviteMemberSerializer,
+    MemberSerializer,
+    OrganizationSerializer,
+    OrganizationUpdateSerializer,
+    UpdateRoleSerializer,
+)
 
 
 def get_org_id(request) -> str:
     return request.auth.payload["organization_id"]
+
+
+class OrganizationDetailView(APIView):
+    permission_classes = [HasTenantContext, CanReadBilling]
+
+    def get_permissions(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return [HasTenantContext(), CanManageOrg()]
+        return super().get_permissions()
+
+    def get(self, request):
+        org = Organization.objects.filter(id=get_org_id(request)).first()
+        if not org:
+            return Response({"error": "Organization not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"organization": OrganizationSerializer(org).data})
+
+    def patch(self, request):
+        org = Organization.objects.filter(id=get_org_id(request)).first()
+        if not org:
+            return Response({"error": "Organization not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrganizationUpdateSerializer(org, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"organization": OrganizationSerializer(org).data})
 
 
 class MemberListView(APIView):

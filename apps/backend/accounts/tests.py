@@ -124,3 +124,60 @@ class OrganizationRbacTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["member"]["role"], Role.MEMBER)
+
+    def test_admin_can_update_organization_settings(self):
+        user_model = get_user_model()
+        admin = user_model.objects.create_user(
+            email="admin2@elitefintech.co.ug",
+            password="demo12345",
+            name="Admin Two",
+        )
+        org = Organization.objects.create(
+            name="Old Name",
+            slug="old-name",
+            country="UG",
+            province="CENTRAL",
+            industry_sector="Payments",
+        )
+        Membership.objects.create(user=admin, organization=org, role=Role.ADMIN)
+
+        self.client.credentials(HTTP_AUTHORIZATION=self._auth_header_for(admin, org.id, Role.ADMIN))
+        response = self.client.patch(
+            "/api/v1/org/",
+            {
+                "name": "Kampala Pay Ltd",
+                "vat_number": "1000999888",
+                "industry_sector": "Payments & Wallets",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["organization"]["name"], "Kampala Pay Ltd")
+        self.assertEqual(response.data["organization"]["vat_number"], "1000999888")
+        org.refresh_from_db()
+        self.assertEqual(org.name, "Kampala Pay Ltd")
+
+    def test_viewer_cannot_update_organization_settings(self):
+        user_model = get_user_model()
+        viewer = user_model.objects.create_user(
+            email="viewer2@elitefintech.co.ug",
+            password="demo12345",
+            name="Viewer Two",
+        )
+        org = Organization.objects.create(
+            name="Locked Org",
+            slug="locked-org",
+            country="UG",
+            province="CENTRAL",
+        )
+        Membership.objects.create(user=viewer, organization=org, role=Role.VIEWER)
+
+        self.client.credentials(HTTP_AUTHORIZATION=self._auth_header_for(viewer, org.id, Role.VIEWER))
+        response = self.client.patch(
+            "/api/v1/org/",
+            {"name": "Hacked Name"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

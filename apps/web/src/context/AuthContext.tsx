@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { api, type AuthUser, type Organization, type RegisterPayload } from "../lib/api";
+import { api, type AuthUser, type Organization, type OrganizationUpdatePayload, type RegisterPayload } from "../lib/api";
 
 interface AuthState {
   user: AuthUser | null;
@@ -8,6 +8,7 @@ interface AuthState {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
+  updateOrganization: (data: OrganizationUpdatePayload) => Promise<Organization>;
   logout: () => void;
 }
 
@@ -57,6 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(data.role);
   };
 
+  const updateOrganization = async (payload: OrganizationUpdatePayload) => {
+    const data = await api.updateOrganization(payload);
+    setOrganization(data.organization);
+    return data.organization;
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -65,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, organization, role, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, organization, role, loading, login, register, updateOrganization, logout }}>
       {children}
     </AuthContext.Provider>
   );

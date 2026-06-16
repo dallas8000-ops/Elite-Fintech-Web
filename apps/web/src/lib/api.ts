@@ -19,6 +19,14 @@ export interface Organization {
   popia_consent_at?: string;
 }
 
+export interface OrganizationUpdatePayload {
+  name?: string;
+  province?: string;
+  industry_sector?: string;
+  cipc_registration_number?: string;
+  vat_number?: string;
+}
+
 export interface SaPlan {
   tier: string;
   label: string;
@@ -226,6 +234,15 @@ export const api = {
       "/api/v1/org/members/"
     ),
 
+  getOrganization: () =>
+    request<{ organization: Organization }>("/api/v1/org/"),
+
+  updateOrganization: (data: OrganizationUpdatePayload) =>
+    request<{ organization: Organization }>("/api/v1/org/", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   getCapabilities: () => request<PlatformCapabilities>("/api/v1/platform/capabilities/"),
 
   getSetup: () => request<SetupManifest>("/api/v1/platform/setup/"),
@@ -255,6 +272,13 @@ export function getWsUrl(token: string): string {
   if (base) return `${base}?token=${token}`;
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
   return `${proto}://${window.location.host}/ws/billing/?token=${token}`;
+}
+
+/** Django admin lives on the API host, not the Vite dev server. */
+export function getAdminUrl(): string {
+  const base = import.meta.env.VITE_API_URL;
+  if (base) return `${String(base).replace(/\/$/, "")}/admin/`;
+  return "http://localhost:8000/admin/";
 }
 
 export function formatMoney(amountMinor: number | null, currency = "ugx"): string {
