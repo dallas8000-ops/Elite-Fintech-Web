@@ -1,9 +1,15 @@
 from datetime import date
+from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
+from rest_framework import status
+from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from billing.models import FxRateSnapshot
 from billing.services.market_pricing import plans_for_country_market, usd_to_minor
+from organizations.models import Membership, Organization, Role
 
 
 class MarketPricingTests(TestCase):
@@ -35,3 +41,41 @@ class MarketPricingTests(TestCase):
 
         self.assertEqual(len(plans), 3)
         self.assertEqual(meta["country"], "UG")
+
+
+class EastAfricaCheckoutPathTests(APITestCase):
+    def _auth_header_for(self, user, org_id: str, role: str) -> str:
+        refresh = RefreshToken.for_user(user)
+        refresh["organization_id"] = str(org_id)
+        refresh["role"] = role
+        access = refresh.access_token
+        access["organization_id"] = str(org_id)
+        access["role"] = role
+        return f"Bearer {access}"
+
+    @patch.dict("os.environ", {"FLUTTERWAVE_SECRET_KEY": ""}, clear=False)
+    def test_instant_eft_routes_to_flutterwave_path(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="momo-admin@elitefintech.co.ug",
+            password="demo12345",
+            name="MoMo Admin",
+        )
+        org = Organization.objects.create(
+            name="MoMo Smoke Org",
+            slug="momo-smoke-org",
+            country="UG",
+            province="CENTRAL",
+        )
+        Membership.objects.create(user=user, organization=org, role=Role.ADMIN)
+
+        self.client.credentials(HTTP_AUTHORIZATION=self._auth_header_for(user, org.id, Role.ADMIN))
+        response = self.client.post(
+            "/api/v1/billing/checkout/",
+            {"tier": "PRO", "rail": "INSTANT_EFT"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data["provider"], "FLUTTERWAVE")
+        self.assertIn("Flutterwave not configured", response.data["error"])
