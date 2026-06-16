@@ -4,6 +4,7 @@ import AppNavbar from "../components/AppNavbar";
 import { useAuth } from "../context/AuthContext";
 import { useRealtime } from "../hooks/useRealtime";
 import PaymentLandscape, { SettlementBadge } from "../components/PaymentLandscape";
+import SmartFeedAssistant from "../components/SmartFeedAssistant";
 import {
   api,
   EVENT_LABELS,
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   } | null>(null);
 
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
+  const [filteredEvents, setFilteredEvents] = useState<PaymentEvent[] | null>(null);
 
   const checkoutStatus = searchParams.get("checkout");
   const checkoutRail = searchParams.get("rail");
@@ -202,13 +204,22 @@ export default function DashboardPage() {
               <h2 className="font-semibold">Live Payment Feed</h2>
               <span className="text-xs text-muted font-mono">MoMo · USSD · Agent cash</span>
             </div>
+            <SmartFeedAssistant
+              events={realtime.events}
+              currency={currency}
+              onFilteredChange={setFilteredEvents}
+            />
             <div className="max-h-96 overflow-y-auto">
               {realtime.events.length === 0 ? (
                 <p className="text-muted text-sm p-6 text-center">
                   No payment events yet. Choose a mobile money or USSD rail below.
                 </p>
+              ) : (filteredEvents ?? realtime.events).length === 0 ? (
+                <p className="text-muted text-sm p-6 text-center">
+                  No events match that search. Try a different query.
+                </p>
               ) : (
-                realtime.events.map((event) => (
+                (filteredEvents ?? realtime.events).map((event) => (
                   <EventRow key={event.id} event={event} isNew={newEventIds.has(event.id)} currency={currency} />
                 ))
               )}
