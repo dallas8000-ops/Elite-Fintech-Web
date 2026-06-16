@@ -119,6 +119,16 @@ Demo login:
 - Email: `demo@elitefintech.co.ug`
 - Password: `demo1234`
 
+### Self-check (run after every change)
+
+```bash
+npm run check        # migrate + django check + all tests + API contract checks
+npm run check:live   # above + live HTTP smoke (backend must be running)
+npm run smoke        # seed demo data + live smoke only
+```
+
+GitHub Actions runs the same checks on every push/PR to `main` (`.github/workflows/self-check.yml`).
+
 ## Environment configuration
 
 Main backend config lives in `apps/backend/.env.example`.

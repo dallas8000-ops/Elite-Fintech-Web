@@ -1,0 +1,51 @@
+name: Self Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  SECRET_KEY: ci-self-check-secret
+  DEBUG: "True"
+
+jobs:
+  self-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: pip install -r apps/backend/requirements.txt
+
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+        working-directory: apps/backend
+
+      - name: Offline self-check (django check, tests, contracts)
+        run: python scripts/self_check.py --skip-migrate
+        working-directory: apps/backend
+
+      - name: Seed demo data and start API
+        run: |
+          python manage.py seed_demo
+          python manage.py runserver 8000 &
+          sleep 4
+          curl -sf http://127.0.0.1:8000/health/
+        working-directory: apps/backend
+
+      - name: Live API smoke test
+        run: python scripts/smoke_live.py
+        working-directory: apps/backend
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:8000

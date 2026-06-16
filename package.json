@@ -9,6 +9,8 @@
     "migrate": "cd apps/backend && python manage.py migrate",
     "seed": "cd apps/backend && python manage.py seed_demo",
     "test:backend": "cd apps/backend && python manage.py test",
-    "smoke": "cd apps/backend && python manage.py seed_demo && python scripts/smoke_live.py"
+    "smoke": "cd apps/backend && python manage.py seed_demo && python scripts/smoke_live.py",
+    "check": "cd apps/backend && python scripts/self_check.py",
+    "check:live": "cd apps/backend && python scripts/self_check.py --live"
   }
 }
