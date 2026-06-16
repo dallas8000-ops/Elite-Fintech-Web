@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/appnavbar.tsx","./src/components/paymentlandscape.tsx","./src/context/authcontext.tsx","./src/hooks/userealtime.ts","./src/lib/api.ts","./src/pages/dashboardpage.tsx","./src/pages/landingpage.tsx","./src/pages/loginpage.tsx","./src/pages/registerpage.tsx","./src/pages/setuppage.tsx"],"errors":true,"version":"5.9.3"}

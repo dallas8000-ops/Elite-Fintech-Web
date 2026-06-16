@@ -1,0 +1,12 @@
+{
+  "name": "elite-fintech-systems",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["apps/web"],
+  "scripts": {
+    "dev:web": "npm run dev -w apps/web",
+    "dev:backend": "cd apps/backend && python manage.py runserver 8000",
+    "migrate": "cd apps/backend && python manage.py migrate",
+    "seed": "cd apps/backend && python manage.py seed_demo"
+  }
+}

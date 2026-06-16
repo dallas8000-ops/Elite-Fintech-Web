@@ -1,0 +1,53 @@
+# Optional Render blueprint — only if you already use Render (many teams find it pricey).
+# Dashboard: New > Blueprint > connect repo with this file.
+
+services:
+  - type: web
+    name: elite-fintech-api
+    runtime: docker
+    dockerfilePath: ./apps/backend/Dockerfile
+    dockerContext: ./apps/backend
+    plan: starter
+    healthCheckPath: /health/
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: elite-fintech-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: elite-fintech-redis
+          type: redis
+          property: connectionString
+      - key: CLIENT_URL
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+
+  - type: web
+    name: elite-fintech-web
+    runtime: docker
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: .
+    plan: starter
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_WS_URL
+        sync: false
+
+  - type: redis
+    name: elite-fintech-redis
+    plan: starter
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+databases:
+  - name: elite-fintech-db
+    plan: starter

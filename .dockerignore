@@ -1,0 +1,10 @@
+node_modules
+.git
+.env
+*.sqlite3
+apps/backend/.venv
+apps/backend/__pycache__
+apps/backend/staticfiles
+**/__pycache__
+**/*.pyc
+.cursor
