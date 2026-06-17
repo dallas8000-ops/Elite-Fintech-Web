@@ -25,6 +25,11 @@ for _env_host in (
         if _candidate not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(_candidate)
 
+# Railway internal healthchecks use this Host header (not the public domain).
+if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+    if "healthcheck.railway.app" not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append("healthcheck.railway.app")
+
 _csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "")
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in _csrf.split(",") if u.strip()]
 _client = os.getenv("CLIENT_URL", "")
