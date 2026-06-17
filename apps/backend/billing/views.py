@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import logging
 
-
-
 from django.db.models import Sum
 
 from django.shortcuts import get_object_or_404
@@ -205,6 +203,17 @@ class StatsView(APIView):
 
         )
 
+        from sacco.models import PaymentIntent, PaymentIntentStatus
+
+        start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_intents = PaymentIntent.objects.filter(organization_id=oid, created_at__gte=start)
+        collections_today = (
+            today_intents.filter(status=PaymentIntentStatus.SUCCESS).aggregate(total=Sum("amount_minor")).get("total")
+            or 0
+        )
+        pending_intents = today_intents.filter(status=PaymentIntentStatus.PENDING).count()
+        failed_intents = today_intents.filter(status=PaymentIntentStatus.FAILED).count()
+
         return Response(
 
             {
@@ -218,6 +227,12 @@ class StatsView(APIView):
                 "currency": default_currency(country),
 
                 "country": country,
+
+                "collections_today_minor": collections_today,
+
+                "pending_intents": pending_intents,
+
+                "failed_intents": failed_intents,
 
             }
 

@@ -37,6 +37,12 @@ export default function AppNavbar() {
               <NavLink to="/dashboard" className={linkClass}>
                 Dashboard
               </NavLink>
+              <NavLink to="/members" className={linkClass}>
+                Members
+              </NavLink>
+              <NavLink to="/collections" className={linkClass}>
+                Collections
+              </NavLink>
               <NavLink to="/settings" className={linkClass}>
                 Settings
               </NavLink>

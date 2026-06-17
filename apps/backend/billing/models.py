@@ -23,6 +23,8 @@ class PaymentProvider(models.TextChoices):
     PAYFAST = "PAYFAST", "PayFast"
     OZOW = "OZOW", "Ozow"
     PEACH_PAYMENTS = "PEACH_PAYMENTS", "Peach Payments"
+    FLUTTERWAVE = "FLUTTERWAVE", "Flutterwave"
+    PESAPAL = "PESAPAL", "Pesapal"
 
 
 class PaymentRail(models.TextChoices):

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "billing",
     "realtime",
     "efs_platform",
+    "sacco",
 ]
 
 MIDDLEWARE = [
@@ -174,6 +175,11 @@ PAYFAST_MERCHANT_ID = os.getenv("PAYFAST_MERCHANT_ID", "")
 PAYFAST_MERCHANT_KEY = os.getenv("PAYFAST_MERCHANT_KEY", "")
 PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "")
 PAYFAST_SANDBOX = os.getenv("PAYFAST_SANDBOX", "True").lower() in ("true", "1", "yes")
+
+FLUTTERWAVE_SECRET_KEY = os.getenv("FLUTTERWAVE_SECRET_KEY", "")
+FLUTTERWAVE_PUBLIC_KEY = os.getenv("FLUTTERWAVE_PUBLIC_KEY", "")
+FLUTTERWAVE_WEBHOOK_SECRET = os.getenv("FLUTTERWAVE_WEBHOOK_SECRET", "")
+FLUTTERWAVE_ENV = os.getenv("FLUTTERWAVE_ENV", "sandbox")
 
 PLATFORM_CNAME_TARGET = os.getenv("PLATFORM_CNAME_TARGET", "edge.elitefintech.systems")
 

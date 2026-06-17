@@ -117,6 +117,47 @@ export interface BillingStats {
   totalRevenue: number;
   currency?: string;
   country?: string;
+  collections_today_minor?: number;
+  pending_intents?: number;
+  failed_intents?: number;
+}
+
+export interface SaccoMember {
+  id: string;
+  memberNumber: string;
+  fullName: string;
+  phone: string;
+  momoNetwork: string;
+  status: string;
+  joinedAt: string;
+  balance_minor: number;
+}
+
+export interface CollectionProduct {
+  id: string;
+  name: string;
+  amountMinor: number;
+  currency: string;
+  frequency: string;
+  vatInclusive: boolean;
+  isActive: boolean;
+}
+
+export interface PaymentIntent {
+  intentId: string;
+  status: string;
+  amountMinor: number;
+  currency: string;
+  rail: string;
+  provider: string;
+  providerReference: string;
+  providerTransactionId: string | null;
+  phone: string;
+  purpose: string;
+  expiresAt: string;
+  createdAt: string;
+  member?: SaccoMember;
+  memberId?: string;
 }
 
 export interface PlatformCapabilities {
@@ -265,6 +306,62 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ hostname, verification_token }),
     }),
+
+  getSaccoMembers: (q?: string) =>
+    request<{ members: SaccoMember[] }>(`/api/v1/members/${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+
+  createSaccoMember: (data: {
+    member_number: string;
+    full_name: string;
+    phone: string;
+    momo_network?: string;
+  }) => request<SaccoMember>("/api/v1/members/", { method: "POST", body: JSON.stringify(data) }),
+
+  getCollectionProducts: () => request<{ products: CollectionProduct[] }>("/api/v1/collections/products/"),
+
+  createCollectionProduct: (data: {
+    name: string;
+    amountMinor: number;
+    frequency?: string;
+    vatInclusive?: boolean;
+  }) =>
+    request<CollectionProduct>("/api/v1/collections/products/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  initiateCollection: (data: {
+    member_id: string;
+    product_id?: string;
+    amount_minor?: number;
+    purpose?: string;
+    idempotency_key?: string;
+  }) =>
+    request<{
+      intent_id: string;
+      status: string;
+      provider: string;
+      payment_url: string | null;
+      message: string;
+      expires_at: string;
+    }>("/api/v1/collections/initiate/", { method: "POST", body: JSON.stringify(data) }),
+
+  getCollectionIntents: (params?: { status?: string; today?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.today) qs.set("today", "1");
+    const q = qs.toString();
+    return request<{ intents: PaymentIntent[] }>(`/api/v1/collections/intents/${q ? `?${q}` : ""}`);
+  },
+
+  getCollectionStats: () =>
+    request<{
+      collections_today_minor: number;
+      pending_intents: number;
+      failed_intents: number;
+      flutterwave_configured: boolean;
+      flutterwave_env: string;
+    }>("/api/v1/collections/stats/"),
 };
 
 export function getWsUrl(token: string): string {
