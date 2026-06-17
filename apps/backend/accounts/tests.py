@@ -3,33 +3,37 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from accounts.cookies import REFRESH_COOKIE_NAME
 from organizations.models import Membership, Organization, Role
+
+REGISTER_PAYLOAD = {
+    "email": "owner@elitefintech.co.ug",
+    "password": "demo12345",
+    "name": "Owner User",
+    "organization_name": "Kampala Wallets",
+    "country": "UG",
+    "province": "CENTRAL",
+    "industry_sector": "payments",
+    "data_consent": True,
+}
 
 
 class AuthApiTests(APITestCase):
-    def test_register_creates_owner_membership_and_returns_tokens(self):
-        payload = {
-            "email": "owner@elitefintech.co.ug",
-            "password": "demo12345",
-            "name": "Owner User",
-            "organization_name": "Kampala Wallets",
-            "country": "UG",
-            "province": "CENTRAL",
-            "industry_sector": "payments",
-            "data_consent": True,
-        }
-        response = self.client.post("/api/v1/auth/register/", payload, format="json")
+    def test_register_creates_owner_membership_and_sets_refresh_cookie(self):
+        response = self.client.post("/api/v1/auth/register/", REGISTER_PAYLOAD, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
+        self.assertIn("token", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.assertIn(REFRESH_COOKIE_NAME, response.cookies)
         self.assertEqual(response.data["organization"]["country"], "UG")
 
         org = Organization.objects.get(name="Kampala Wallets")
-        membership = Membership.objects.get(organization=org, user__email=payload["email"])
+        membership = Membership.objects.get(organization=org, user__email=REGISTER_PAYLOAD["email"])
         self.assertEqual(membership.role, Role.OWNER)
 
-    def test_login_returns_membership_context(self):
+    def test_login_returns_membership_context_and_refresh_cookie(self):
         user_model = get_user_model()
         user = user_model.objects.create_user(
             email="member@elitefintech.co.ke",
@@ -54,6 +58,21 @@ class AuthApiTests(APITestCase):
         self.assertEqual(response.data["role"], Role.ADMIN)
         self.assertEqual(response.data["organization"]["id"], str(org.id))
         self.assertGreaterEqual(len(response.data["organizations"]), 1)
+        self.assertIn(REFRESH_COOKIE_NAME, response.cookies)
+        self.assertNotIn("refresh", response.data)
+
+    def test_refresh_issues_new_access_token(self):
+        self.client.post("/api/v1/auth/register/", REGISTER_PAYLOAD, format="json")
+        response = self.client.post("/api/v1/auth/refresh/", format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn(REFRESH_COOKIE_NAME, response.cookies)
+
+    def test_logout_revokes_refresh_token(self):
+        self.client.post("/api/v1/auth/register/", REGISTER_PAYLOAD, format="json")
+        self.client.post("/api/v1/auth/logout/", format="json")
+        response = self.client.post("/api/v1/auth/refresh/", format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class OrganizationRbacTests(APITestCase):

@@ -63,9 +63,8 @@ function EventRow({ event, isNew, currency }: { event: PaymentEvent; isNew?: boo
 }
 
 export default function DashboardPage() {
-  const { user, organization, role } = useAuth();
-  const token = localStorage.getItem("token");
-  const realtime = useRealtime(token);
+  const { user, organization, role, accessToken } = useAuth();
+  const realtime = useRealtime(accessToken);
   const [searchParams] = useSearchParams();
 
   const [stats, setStats] = useState<BillingStats | null>(null);

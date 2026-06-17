@@ -14,8 +14,7 @@ export default function AppNavbar() {
   const canManage = role === "OWNER" || role === "ADMIN";
 
   const handleSignOut = () => {
-    logout();
-    navigate("/");
+    void logout().finally(() => navigate("/"));
   };
 
   return (

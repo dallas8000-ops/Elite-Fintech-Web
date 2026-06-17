@@ -204,19 +204,56 @@ export interface RegisterPayload {
   data_consent: boolean;
 }
 
-function getToken(): string | null {
-  return localStorage.getItem("token");
+let accessToken: string | null = null;
+
+export function getAccessToken(): string | null {
+  return accessToken;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+export function setAccessToken(token: string | null): void {
+  accessToken = token;
+}
+
+function applyAccessFromResponse(data: { access?: string; token?: string }) {
+  accessToken = data.access ?? data.token ?? null;
+}
+
+const AUTH_NO_RETRY = ["/api/v1/auth/login/", "/api/v1/auth/register/", "/api/v1/auth/refresh/", "/api/v1/auth/logout/"];
+
+async function refreshAccessToken(): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/api/v1/auth/refresh/`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    accessToken = null;
+    return false;
+  }
+  const data = await res.json();
+  applyAccessFromResponse(data);
+  return Boolean(accessToken);
+}
+
+async function request<T>(path: string, options: RequestInit = {}, allowRefresh = true): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: "include" });
+
+  if (
+    res.status === 401 &&
+    allowRefresh &&
+    !AUTH_NO_RETRY.some((p) => path.startsWith(p))
+  ) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return request<T>(path, options, false);
+    }
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
@@ -227,18 +264,44 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
-export const api = {
-  register: (data: RegisterPayload) =>
-    request<{ token: string; user: AuthUser; organization: Organization; role: string }>(
-      "/api/v1/auth/register/",
-      { method: "POST", body: JSON.stringify(data) }
-    ),
+type AuthResponse = {
+  access?: string;
+  token: string;
+  user: AuthUser;
+  organization: Organization;
+  role: string;
+};
 
-  login: (data: { email: string; password: string }) =>
-    request<{ token: string; user: AuthUser; organization: Organization; role: string }>(
+export const api = {
+  refreshSession: async () => refreshAccessToken(),
+
+  logout: async () => {
+    try {
+      await request<{ detail: string }>("/api/v1/auth/logout/", { method: "POST" }, false);
+    } finally {
+      setAccessToken(null);
+    }
+  },
+
+  register: async (data: RegisterPayload) => {
+    const res = await request<AuthResponse>(
+      "/api/v1/auth/register/",
+      { method: "POST", body: JSON.stringify(data) },
+      false
+    );
+    applyAccessFromResponse(res);
+    return res;
+  },
+
+  login: async (data: { email: string; password: string }) => {
+    const res = await request<AuthResponse>(
       "/api/v1/auth/login/",
-      { method: "POST", body: JSON.stringify(data) }
-    ),
+      { method: "POST", body: JSON.stringify(data) },
+      false
+    );
+    applyAccessFromResponse(res);
+    return res;
+  },
 
   me: () =>
     request<{ user: AuthUser; organization: Organization; role: string }>("/api/v1/auth/me/"),

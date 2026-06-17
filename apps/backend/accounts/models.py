@@ -36,3 +36,17 @@ class User(AbstractUser):
 
     def __str__(self) -> str:
         return self.email
+
+
+class RevokedRefreshToken(models.Model):
+    """Hard revocation for refresh tokens on explicit logout.
+
+    Distinct from simplejwt's rotation blacklist, which tolerates a short grace
+    window for concurrent tab refreshes. Logout must invalidate immediately.
+    """
+
+    jti = models.CharField(max_length=255, unique=True, db_index=True)
+    revoked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "revoked_refresh_tokens"
