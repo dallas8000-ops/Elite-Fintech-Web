@@ -29,6 +29,12 @@ export default function LandingPage() {
         </p>
         <div className="flex flex-wrap justify-center gap-4 mt-10">
           <Link
+            to="/demo"
+            className="bg-emerald-600 hover:bg-emerald-500 px-8 py-3 rounded-xl font-medium transition-colors"
+          >
+            Try live demo
+          </Link>
+          <Link
             to="/register"
             className="bg-brand-600 hover:bg-brand-500 px-8 py-3 rounded-xl font-medium transition-colors"
           >

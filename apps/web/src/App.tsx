@@ -8,6 +8,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SetupPage from "./pages/SetupPage";
 import MembersPage from "./pages/MembersPage";
 import CollectionsPage from "./pages/CollectionsPage";
+import DemoPage from "./pages/DemoPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -27,6 +28,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/demo" element={<DemoPage />} />
       <Route
         path="/login"
         element={

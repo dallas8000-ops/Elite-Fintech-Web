@@ -75,6 +75,12 @@ export default function AppNavbar() {
                 Sign in
               </NavLink>
               <Link
+                to="/demo"
+                className="border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Try demo
+              </Link>
+              <Link
                 to="/register"
                 className="bg-brand-600 hover:bg-brand-500 px-4 py-2 rounded-lg font-medium text-white transition-colors"
               >
