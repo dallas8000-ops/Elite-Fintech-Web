@@ -12,6 +12,8 @@ RUN npm run build -w apps/web
 
 FROM nginx:alpine
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/docker-entrypoint.sh /start.sh
+RUN chmod +x /start.sh
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/start.sh"]

@@ -15,7 +15,11 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 _hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _hosts.split(",") if h.strip()]
 
-for _env_host in (os.getenv("FLY_APP_NAME"), os.getenv("RENDER_EXTERNAL_HOSTNAME")):
+for _env_host in (
+    os.getenv("FLY_APP_NAME"),
+    os.getenv("RENDER_EXTERNAL_HOSTNAME"),
+    os.getenv("RAILWAY_PUBLIC_DOMAIN"),
+):
     if _env_host:
         _candidate = _env_host if "." in _env_host else f"{_env_host}.fly.dev"
         if _candidate not in ALLOWED_HOSTS:
@@ -95,11 +99,18 @@ if DATABASE_URL.startswith("sqlite"):
 else:
     import dj_database_url
 
+    _db_ssl = os.getenv("DATABASE_SSL_REQUIRE")
+    if _db_ssl is not None:
+        _ssl_require = _db_ssl.lower() in ("true", "1", "yes")
+    else:
+        # Railway private network URLs do not need forced SSL at the driver level.
+        _ssl_require = not DEBUG and ".railway.internal" not in DATABASE_URL
+
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
             conn_max_age=600,
-            ssl_require=not DEBUG,
+            ssl_require=_ssl_require,
         )
     }
 
