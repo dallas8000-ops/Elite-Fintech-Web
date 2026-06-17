@@ -10,7 +10,9 @@
     "seed": "cd apps/backend && python manage.py seed_demo",
     "test:backend": "cd apps/backend && python manage.py test",
     "smoke": "cd apps/backend && python manage.py seed_demo && python scripts/smoke_live.py",
-    "check": "cd apps/backend && python scripts/self_check.py",
+    "check": "npm run check:backend && npm run check:web",
+    "check:backend": "cd apps/backend && python scripts/self_check.py",
+    "check:web": "npm run build -w apps/web",
     "check:live": "cd apps/backend && python scripts/self_check.py --live"
   }
 }

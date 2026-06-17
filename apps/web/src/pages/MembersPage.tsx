@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AppNavbar from "../components/AppNavbar";
 import { useAuth } from "../context/AuthContext";
-import { api, formatMoney, type SaccoMember, type CollectionProduct, type PaymentIntent } from "../lib/api";
+import { api, formatMoney, type SaccoMember, type CollectionProduct } from "../lib/api";
 
 export default function MembersPage() {
   const { role } = useAuth();

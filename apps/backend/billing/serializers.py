@@ -56,3 +56,4 @@ class CheckoutSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
+    client_nonce = serializers.CharField(max_length=64, required=False, allow_blank=True)

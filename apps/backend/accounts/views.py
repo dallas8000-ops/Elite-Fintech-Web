@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 def build_tokens(user: User, organization_id: str, role: str) -> dict:
+    """Mint a fresh access+refresh pair bound to the given org/role context.
+
+    The refresh token is set as an httpOnly cookie by the caller — never
+    returned in the JSON body.
+    """
     refresh = RefreshToken.for_user(user)
     refresh["organization_id"] = str(organization_id)
     refresh["role"] = role
@@ -36,6 +41,7 @@ def build_tokens(user: User, organization_id: str, role: str) -> dict:
 
 
 def _attach_tokens(response: Response, tokens: dict) -> Response:
+    """Strip the refresh token from the JSON body and set it as a cookie."""
     refresh_token = tokens.pop("refresh", None)
     if isinstance(response.data, dict):
         response.data = {k: v for k, v in response.data.items() if k != "refresh"}
@@ -170,6 +176,11 @@ class LoginView(APIView):
 
 
 class RefreshView(APIView):
+    """Mint a new access token from the httpOnly refresh cookie.
+
+    Re-verifies organization membership and current role on every refresh.
+    """
+
     permission_classes = [permissions.AllowAny]
     throttle_scope = "auth-refresh"
 

@@ -245,6 +245,7 @@ class StatsView(APIView):
 class CheckoutView(APIView):
 
     permission_classes = [HasTenantContext, CanManageBilling]
+    throttle_scope = "billing-checkout"
 
 
 
@@ -304,6 +305,10 @@ class CheckoutView(APIView):
 
             price_id = price_map.get(data["tier"], "")
 
+            nonce = data.get("client_nonce") or f"{org.id}:{data['tier']}:{rail}"
+            customer_idempotency_key = f"efs-customer-{org.id}"
+            session_idempotency_key = f"efs-checkout-{org.id}-{data['tier']}-{rail}-{nonce}"
+
             try:
                 if not org.stripe_customer_id:
                     customer = client.customers.create(
@@ -311,7 +316,8 @@ class CheckoutView(APIView):
                             "email": request.user.email,
                             "name": org.name,
                             "metadata": {"organization_id": str(org.id), "country": org.country},
-                        }
+                        },
+                        options={"idempotency_key": customer_idempotency_key},
                     )
 
                     org.stripe_customer_id = customer.id
@@ -326,7 +332,8 @@ class CheckoutView(APIView):
                         "cancel_url": f"{settings.CLIENT_URL}/dashboard?checkout=canceled",
                         "metadata": {"organization_id": str(org.id), "rail": rail, "country": org.country},
                         "subscription_data": {"metadata": {"organization_id": str(org.id)}},
-                    }
+                    },
+                    options={"idempotency_key": session_idempotency_key},
                 )
             except Exception as exc:
                 logger.warning("Stripe checkout failed for org %s: %s", org.id, exc)

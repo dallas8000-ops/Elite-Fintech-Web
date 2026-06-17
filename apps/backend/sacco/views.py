@@ -134,6 +134,7 @@ class CollectionProductListCreateView(APIView):
 
 class InitiateCollectionView(APIView):
     permission_classes = [HasTenantContext, CanManageBilling]
+    throttle_scope = "billing-checkout"
 
     def post(self, request):
         if not is_flutterwave_configured():

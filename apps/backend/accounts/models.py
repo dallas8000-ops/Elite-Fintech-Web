@@ -39,10 +39,16 @@ class User(AbstractUser):
 
 
 class RevokedRefreshToken(models.Model):
-    """Hard revocation for refresh tokens on explicit logout.
+    """Explicit, hard revocation for refresh tokens — distinct from
+    simplejwt's BLACKLIST_AFTER_ROTATION blacklist.
 
-    Distinct from simplejwt's rotation blacklist, which tolerates a short grace
-    window for concurrent tab refreshes. Logout must invalidate immediately.
+    Rotation-blacklisting (a token being superseded by its own successor
+    during a normal /refresh/ call) is given a short grace window to
+    tolerate near-simultaneous concurrent refreshes from the same
+    legitimate session (e.g. two open tabs). Explicit logout must NOT get
+    that same leniency — a token the user deliberately logged out from
+    needs to stop working immediately, with no window in which a captured
+    copy could still be replayed.
     """
 
     jti = models.CharField(max_length=255, unique=True, db_index=True)

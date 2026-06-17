@@ -85,6 +85,11 @@ if DATABASE_URL.startswith("sqlite"):
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
+            "OPTIONS": {
+                "timeout": 20,
+                "transaction_mode": "IMMEDIATE",
+                "init_command": "PRAGMA journal_mode=WAL;PRAGMA synchronous=NORMAL;",
+            },
         }
     }
 else:
@@ -137,24 +142,46 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.ScopedRateThrottle",),
     "DEFAULT_THROTTLE_RATES": {
-        "auth-login": "10/min",
-        "auth-register": "5/min",
-        "auth-refresh": "30/min",
+        "auth-login": os.getenv("THROTTLE_AUTH_LOGIN", "8/min"),
+        "auth-register": os.getenv("THROTTLE_AUTH_REGISTER", "5/hour"),
+        "auth-refresh": os.getenv("THROTTLE_AUTH_REFRESH", "30/min"),
+        "billing-checkout": os.getenv("THROTTLE_BILLING_CHECKOUT", "20/min"),
     },
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES", "60"))),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES", "10"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_DAYS", "7"))),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
 }
 
 # Lax for local dev; set REFRESH_COOKIE_SAMESITE=None in production when API/app are on different subdomains.
 REFRESH_COOKIE_SAMESITE = os.getenv("REFRESH_COOKIE_SAMESITE", "Lax")
 
 REDIS_URL = os.getenv("REDIS_URL", "")
+
+
+def _cache_backend():
+    if REDIS_URL:
+        try:
+            import django_redis  # noqa: F401
+
+            return {
+                "default": {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": REDIS_URL,
+                }
+            }
+        except Exception:
+            pass
+    return {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+
+CACHES = _cache_backend()
+
 
 def _channel_layers():
     if REDIS_URL:
