@@ -18,8 +18,30 @@ class ReadinessCheck(TypedDict):
     fix: str | None
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-BACKUP_SCRIPT = REPO_ROOT / "scripts" / "backup-db.sh"
+def _resolve_repo_root() -> Path:
+    path = Path(__file__).resolve()
+    # Monorepo dev: .../apps/backend/config/readiness.py -> repo root at parents[3]
+    if len(path.parents) > 3:
+        candidate = path.parents[3]
+        if (candidate / "package.json").is_file() or (candidate / "docker-compose.yml").is_file():
+            return candidate
+    # Docker (Railway): /app/config/readiness.py -> /app
+    return path.parents[1]
+
+
+def _resolve_backup_script() -> Path:
+    root = _resolve_repo_root()
+    for candidate in (
+        root / "scripts" / "backup-db.sh",
+        Path(__file__).resolve().parents[1] / "scripts" / "backup-db.sh",
+    ):
+        if candidate.is_file():
+            return candidate
+    return root / "scripts" / "backup-db.sh"
+
+
+REPO_ROOT = _resolve_repo_root()
+BACKUP_SCRIPT = _resolve_backup_script()
 _LOCAL_CLIENT_URL = "http://localhost:5173"
 
 
