@@ -72,10 +72,13 @@ def _database_ok() -> bool:
 
 
 def _database_url_ok() -> bool:
-    url = os.getenv("DATABASE_URL", "")
-    if not url:
+    url = (os.getenv("DATABASE_URL", "") or "").strip()
+    if not url or url.startswith("sqlite"):
         return False
-    return url.startswith(("postgresql://", "postgres://"))
+    if url.startswith(("postgresql://", "postgres://")):
+        return True
+    # Railway may expose internal hostnames; DB connectivity is the source of truth.
+    return _database_ok() and "postgres" in url.lower()
 
 
 def _stripe_ok() -> bool:

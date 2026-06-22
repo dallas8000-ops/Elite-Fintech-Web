@@ -60,6 +60,11 @@ class ApiContractSelfCheckTests(APITestCase):
         self.assertIn("PLATINUM", response.data["tier_ladder"])
         self.assertIn("deployment_readiness", response.data)
 
+    def test_backup_script_present_in_backend(self):
+        from config.readiness import BACKUP_SCRIPT
+
+        self.assertTrue(BACKUP_SCRIPT.is_file(), f"expected {BACKUP_SCRIPT}")
+
     def test_platinum_automation_upgrade(self):
         user_model = get_user_model()
         user = user_model.objects.create_user(
