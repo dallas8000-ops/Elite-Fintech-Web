@@ -7,6 +7,7 @@ from config.readiness import deployment_tier_for_score, readiness_score, readine
 
 
 def health(_request):
+    """Liveness probe — always HTTP 200 when Django is up (Railway healthcheck)."""
     payload = {
         "status": "ok",
         "service": "elite-fintech-api",
@@ -33,13 +34,22 @@ def health(_request):
     critical_failed = any(not c["passed"] for c in checks if c["id"] in ("database", "health_endpoint"))
     if critical_failed:
         payload["status"] = "degraded"
-        return JsonResponse(payload, status=503)
 
     return JsonResponse(payload)
 
 
 def readiness(_request):
-    return JsonResponse(readiness_summary())
+    """Readiness probe — HTTP 503 when critical dependencies are down."""
+    summary = readiness_summary()
+    checks = summary.get("checks") or []
+    critical_failed = any(
+        not c["passed"] for c in checks if c["id"] in ("database", "health_endpoint")
+    )
+    if critical_failed:
+        summary["status"] = "degraded"
+        return JsonResponse(summary, status=503)
+    summary["status"] = "ok"
+    return JsonResponse(summary)
 
 
 urlpatterns = [

@@ -21,9 +21,31 @@ class ApiContractSelfCheckTests(APITestCase):
         response = self.client.get("/health/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertEqual(data["status"], "ok")
+        self.assertIn(data["status"], ("ok", "degraded"))
         self.assertIn("readiness_score", data)
         self.assertIn("checks", data)
+
+    def test_health_ready_returns_503_when_database_down(self):
+        with patch("config.health_urls.readiness_summary") as mock_summary:
+            mock_summary.return_value = {
+                "score": 0,
+                "deployment_tier": "BASIC",
+                "checks": [
+                    {
+                        "id": "database",
+                        "label": "Database connectivity",
+                        "passed": False,
+                        "weight": 14,
+                        "fix": "fix db",
+                    }
+                ],
+                "passed": 0,
+                "total": 1,
+                "gaps": [],
+            }
+            response = self.client.get("/health/ready/")
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.json()["status"], "degraded")
 
     def test_readiness_endpoint_ok(self):
         response = self.client.get("/api/v1/platform/readiness/")
