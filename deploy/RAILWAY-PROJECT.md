@@ -1,39 +1,27 @@
-# Railway — Elite Fintech Systems layout
+# Railway — Elite Fintech Systems (one app)
 
-Elite Fintech should appear as **one dedicated Railway project**, not mixed with other portfolio apps.
+Elite Fintech is **one app** in **one Railway project** (your shared portfolio project, e.g. `hearty-enjoyment`). Railway always uses multiple **services** inside that project for a full stack — that is normal and is not splitting the app.
 
-## Target layout
+| Service | Purpose | Root directory |
+|---------|---------|----------------|
+| `elite-fintech-systems-api` | Django API | `apps/backend` |
+| `elite-fintech-systems-web` | React dashboard | `.` (Dockerfile `apps/web/Dockerfile`) |
+| `elite-fintech-systems-db` | Postgres | plugin |
 
-| Railway project | Service | Root directory | Public URL |
-|-----------------|---------|----------------|------------|
-| **Elite Fintech Systems** | `elite-fintech-systems-api` | `apps/backend` | `elite-fintech-api-production.up.railway.app` |
-| | `elite-fintech-systems-web` | `.` (repo root) | `elite-fintech-web-production.up.railway.app` |
-| | `elite-fintech-systems-db` | Postgres plugin | (internal) |
+All three stay in the **same** Railway project as your other portfolio apps. Only the **service names** are normalized so Elite Fintech is easy to spot in the list.
 
-## Fix a cluttered dashboard
-
-If API, web, and Postgres appear inside a shared hub project with Kistie, SilverFox, etc.:
-
-1. **Create** a new Railway project named `Elite Fintech Systems`.
-2. **Connect** the same GitHub repo twice:
-   - Service `elite-fintech-systems-api` → root `apps/backend`
-   - Service `elite-fintech-systems-web` → root `.` → Dockerfile `apps/web/Dockerfile`
-3. **Add** Postgres → rename to `elite-fintech-systems-db`.
-4. **Copy env vars** from the old services (or run from Deployment-Stripe-center):
-   ```bash
-   python manage.py stripe_installer deploy elite-fintech-systems --push --user you@email.com
-   ```
-5. **Set** `PLATFORM_TIER=PLATINUM`, `CLIENT_URL`, `DEBUG=False` on the API service.
-6. **Redeploy** API and web; verify `/health/` and `/api/v1/platform/capabilities/`.
-7. **Remove** legacy cards from the hub project: `Elite-Fintech-Web`, `elite-fintech-api`, `Postgres-Fintech`.
-
-## Automation audit (rename + report)
-
-From Deployment-Stripe-center:
+## Rename only (no new project)
 
 ```bash
-python manage.py railway_reconcile_portfolio --slug elite-fintech-systems --user dallas8000@gmail.com
-python manage.py railway_reconcile_portfolio --slug elite-fintech-systems --rename
+cd "C:\Software Projects\Deployment-Stripe-center\backend"
+python manage.py railway_reconcile_portfolio --slug elite-fintech-systems --user dallas8000@gmail.com --rename
 ```
 
-`--rename` applies canonical service names via the Railway API. Use `--create-project` to ensure a dedicated project exists.
+## If you accidentally created an empty "Elite Fintech Systems" project
+
+Delete it in the Railway dashboard (Project settings → Delete). The live app should remain in your portfolio project.
+
+## Not required
+
+- A separate Railway project per app — **not needed** unless you want billing/isolation boundaries later.
+- Merging api + web into one service — possible but worse for deploys; api/web/db as named services is the standard monorepo pattern.

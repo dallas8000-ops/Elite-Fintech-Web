@@ -75,7 +75,6 @@ def build_platinum_upgrade_manifest(org, transfer, request) -> dict:
             "setup_steps": upgrade_steps + base_manifest.get("setup_steps", []),
             "deploy_actions": {
                 "railway": {
-                    "project": "Elite Fintech Systems",
                     "service": "elite-fintech-systems-api",
                     "variables": {
                         "PLATFORM_TIER": "PLATINUM",
