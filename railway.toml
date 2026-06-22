@@ -1,0 +1,9 @@
+# Railway service: elite-fintech-systems-web
+# Set service root directory to repo root (.) — Dockerfile lives at apps/web/Dockerfile.
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "apps/web/Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
