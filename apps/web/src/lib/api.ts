@@ -167,11 +167,38 @@ export interface PlatformCapabilities {
   region: string;
   capabilities: { id: string; label: string; included: boolean; note: string }[];
   comparison: Record<string, number>;
+  tier_ladder?: string[];
+  next_tier?: string;
+  upgrade_capabilities?: { id: string; label: string; included: boolean; note: string }[];
+  upgrade_hints?: string[];
+  deployment_readiness?: { score: number; tier: string; gaps: { id: string; label: string; fix: string }[] };
   setup_api?: string;
+  readiness_api?: string;
+}
+
+export interface ReadinessReport {
+  score: number;
+  deployment_tier: string;
+  platform_tier: string;
+  next_tier?: string;
+  upgrade_hints?: string[];
+  checks: { id: string; label: string; passed: boolean; weight: number; fix: string | null }[];
+  passed: number;
+  total: number;
+  gaps: { id: string; label: string; fix: string }[];
+  health_api?: string;
 }
 
 export interface SetupManifest {
   platform_tier: string;
+  target_tier?: string;
+  readiness_score?: number;
+  readiness?: { score: number; eligible: boolean; gaps: { id: string; label: string; fix: string }[]; deployment_tier: string };
+  tier_upgrade?: { from_tier: string; to_tier: string; capabilities_unlocked: { id: string; label: string; note: string }[] };
+  deploy_actions?: {
+    railway?: { service: string; variables: Record<string, string>; note?: string };
+    verify?: Record<string, string>;
+  };
   transfer_token: string;
   target_domain: string;
   urls: Record<string, string>;
@@ -184,6 +211,8 @@ export interface SetupManifest {
     domains_endpoint: string;
     verify_endpoint: string;
     openapi: string;
+    readiness_endpoint?: string;
+    tier_upgrade_endpoint?: string;
     instructions?: string;
   };
   webhook_urls: Record<string, string>;
@@ -348,11 +377,13 @@ export const api = {
     }),
 
   getCapabilities: () => request<PlatformCapabilities>("/api/v1/platform/capabilities/"),
+  getReadiness: () => request<ReadinessReport>("/api/v1/platform/readiness/"),
 
   getSetup: () => request<SetupManifest>("/api/v1/platform/setup/"),
 
   applySetup: (data: {
-    target_domain: string;
+    target_domain?: string;
+    upgrade_tier?: "PLATINUM";
     transfer_token?: string;
     api_subdomain?: string;
     app_subdomain?: string;

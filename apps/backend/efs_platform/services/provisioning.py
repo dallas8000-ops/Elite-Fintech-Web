@@ -1,6 +1,8 @@
 from django.conf import settings
 
+from config.readiness import readiness_summary
 from efs_platform.models import DomainType, OrganizationDomain
+from efs_platform.services.tier import get_platform_profile
 
 
 def platform_cname_target() -> str:
@@ -39,7 +41,8 @@ def build_setup_manifest(org, transfer, request) -> dict:
     default_api = request.build_absolute_uri("/").rstrip("/")
 
     return {
-        "platform_tier": "ENTERPRISE",
+        "platform_tier": get_platform_profile()["tier"],
+        "readiness_score": readiness_summary()["score"],
         "transfer_token": transfer.transfer_token,
         "organization": {"id": str(org.id), "name": org.name, "slug": org.slug},
         "target_domain": base,
@@ -75,6 +78,11 @@ def build_setup_manifest(org, transfer, request) -> dict:
             "domains_endpoint": request.build_absolute_uri("/api/v1/platform/domains/"),
             "verify_endpoint": request.build_absolute_uri("/api/v1/platform/domains/verify/"),
             "openapi": request.build_absolute_uri("/api/v1/platform/openapi/"),
+            "readiness_endpoint": request.build_absolute_uri("/api/v1/platform/readiness/"),
+            "instructions": (
+                "Domain setup: POST apply with target_domain + automation_agent. "
+                "PLATINUM upgrade: POST apply with upgrade_tier=PLATINUM + automation_agent=cursor."
+            ),
         },
         "webhook_urls": {
             "payfast": f"https://{api_host}/webhooks/payfast/",

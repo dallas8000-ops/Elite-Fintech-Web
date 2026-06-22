@@ -12,7 +12,9 @@ from efs_platform.serializers import (
     SetupApplySerializer,
     VerifyDomainSerializer,
 )
+from config.readiness import readiness_summary
 from efs_platform.services.provisioning import build_setup_manifest
+from efs_platform.services.tier_upgrade import apply_platinum_upgrade, build_platinum_upgrade_manifest
 from efs_platform.services.tier import get_platform_profile
 from organizations.models import Organization
 
@@ -29,7 +31,29 @@ class CapabilitiesView(APIView):
     def get(self, request):
         profile = get_platform_profile()
         profile["setup_api"] = request.build_absolute_uri("/api/v1/platform/setup/")
+        profile["readiness_api"] = request.build_absolute_uri("/api/v1/platform/readiness/")
+        readiness = readiness_summary()
+        profile["deployment_readiness"] = {
+            "score": readiness["score"],
+            "tier": readiness["deployment_tier"],
+            "gaps": readiness["gaps"][:5],
+        }
         return Response(profile)
+
+
+class ReadinessView(APIView):
+    """Public — production readiness score and upgrade gaps."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        summary = readiness_summary()
+        profile = get_platform_profile()
+        summary["platform_tier"] = profile["tier"]
+        summary["next_tier"] = profile.get("next_tier")
+        summary["upgrade_hints"] = profile.get("upgrade_hints", [])
+        summary["health_api"] = request.build_absolute_uri("/health/")
+        return Response(summary)
 
 
 class OpenApiView(APIView):
@@ -46,6 +70,7 @@ class OpenApiView(APIView):
             },
             "paths": {
                 "/platform/capabilities/": {"get": {"summary": "Platform tier & capabilities"}},
+                "/platform/readiness/": {"get": {"summary": "Production readiness score & upgrade gaps"}},
                 "/platform/setup/": {"get": {"summary": "Setup transfer manifest (auth)"}},
                 "/platform/setup/apply/": {"post": {"summary": "Apply domain + automation setup"}},
                 "/platform/domains/": {"get": {"summary": "List org domains"}, "post": {"summary": "Create domains"}},
@@ -102,7 +127,26 @@ class SetupApplyView(APIView):
         if data.get("transfer_token") and data["transfer_token"] != transfer.transfer_token:
             return Response({"error": "Invalid transfer token"}, status=status.HTTP_403_FORBIDDEN)
 
-        base = data["target_domain"]
+        if data.get("automation_agent"):
+            transfer.automation_agent = data["automation_agent"]
+        if data.get("completed_steps"):
+            transfer.completed_steps = list(set(transfer.completed_steps + data["completed_steps"]))
+
+        upgrade_tier = data.get("upgrade_tier")
+        if upgrade_tier == "PLATINUM":
+            apply_platinum_upgrade(transfer, data.get("completed_steps"))
+            transfer.save()
+            manifest = build_platinum_upgrade_manifest(org, transfer, request)
+            manifest["message"] = (
+                f"PLATINUM upgrade applied via automation ({transfer.automation_agent or 'agent'}). "
+                "Deploy environment variables from deploy_actions, then redeploy."
+            )
+            return Response(manifest, status=status.HTTP_200_OK)
+
+        base = data.get("target_domain", "").strip()
+        if not base:
+            return Response({"error": "target_domain required for domain setup"}, status=status.HTTP_400_BAD_REQUEST)
+
         transfer.target_domain = base
         transfer.api_subdomain = data.get("api_subdomain", "api")
         transfer.app_subdomain = data.get("app_subdomain", "app")

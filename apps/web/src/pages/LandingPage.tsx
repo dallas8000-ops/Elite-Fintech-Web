@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar";
-import { api, type PlatformCapabilities, type RegionConfig } from "../lib/api";
+import { api, type PlatformCapabilities, type ReadinessReport, type RegionConfig } from "../lib/api";
 
 export default function LandingPage() {
   const [caps, setCaps] = useState<PlatformCapabilities | null>(null);
   const [region, setRegion] = useState<RegionConfig | null>(null);
+  const [readiness, setReadiness] = useState<ReadinessReport | null>(null);
 
   useEffect(() => {
     api.getCapabilities().then(setCaps).catch(() => {});
     api.getRegion().then(setRegion).catch(() => {});
+    api.getReadiness().then(setReadiness).catch(() => {});
   }, []);
 
   return (
@@ -19,6 +21,11 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 py-20 text-center">
         <p className="text-emerald-400 text-sm font-medium mb-4 tracking-wide uppercase">
           {caps?.tier ?? "ENTERPRISE"} · East Africa Fintech Infrastructure
+          {readiness != null && (
+            <span className="ml-2 text-white/50">
+              · readiness {readiness.score}/100
+            </span>
+          )}
         </p>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight max-w-3xl mx-auto leading-tight">
           Billing built for mobile money — Uganda, Kenya, Rwanda, Tanzania
@@ -72,6 +79,63 @@ export default function LandingPage() {
           </div>
         ))}
       </section>
+
+      {caps?.next_tier === "PLATINUM" && (
+        <section className="border-t border-border bg-gradient-to-b from-violet-500/5 to-transparent py-16">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+              <div className="max-w-xl">
+                <p className="text-violet-400 text-xs font-medium uppercase tracking-widest mb-2">
+                  Higher tier · {caps.next_tier}
+                </p>
+                <h2 className="text-2xl font-semibold mb-3">
+                  Institutional-grade when you outgrow standard enterprise
+                </h2>
+                <p className="text-sm text-muted leading-relaxed">
+                  PLATINUM adds dedicated tenancy, multi-region DR, immutable audit export, central bank
+                  reporting hooks, and 99.9% SLA monitoring — for banks, telcos, and licensed PSPs.
+                </p>
+                {readiness && readiness.score < 95 && (
+                  <p className="text-xs text-muted mt-4">
+                    Deployment readiness is {readiness.score}/100 — close the gaps below to unlock{" "}
+                    {readiness.deployment_tier === "ENTERPRISE" ? "PLATINUM" : readiness.next_tier ?? "PLATINUM"}.
+                  </p>
+                )}
+              </div>
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {(caps.upgrade_capabilities ?? []).slice(0, 6).map((cap) => (
+                  <div
+                    key={cap.id}
+                    className="bg-surface-overlay border border-violet-500/20 rounded-lg px-4 py-3"
+                  >
+                    <p className="font-medium text-white/90">{cap.label}</p>
+                    {cap.note && <p className="text-xs text-muted mt-1">{cap.note}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {(readiness?.gaps?.length ?? caps.upgrade_hints?.length) ? (
+              <div className="mt-8 bg-surface-raised border border-border rounded-xl p-5">
+                <p className="text-xs uppercase tracking-widest text-muted mb-3">Upgrade path</p>
+                <ul className="space-y-2 text-sm text-muted">
+                  {(readiness?.gaps ?? []).slice(0, 3).map((gap) => (
+                    <li key={gap.id} className="flex gap-2">
+                      <span className="text-amber-400 shrink-0">→</span>
+                      {gap.fix}
+                    </li>
+                  ))}
+                  {(caps.upgrade_hints ?? []).slice(0, 2).map((hint) => (
+                    <li key={hint} className="flex gap-2">
+                      <span className="text-emerald-400 shrink-0">→</span>
+                      {hint}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
 
       {region && (
         <section className="border-t border-border bg-surface-raised/50 py-16">
@@ -219,7 +283,8 @@ export default function LandingPage() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-xs text-muted">
-        Elite Fintech Systems · Django + React · East Africa · ENTERPRISE tier
+        Elite Fintech Systems · Django + React · East Africa · {caps?.tier ?? "ENTERPRISE"} tier
+        {readiness != null ? ` · deployment ${readiness.deployment_tier} (${readiness.score}/100)` : ""}
       </footer>
     </div>
   );

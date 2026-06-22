@@ -20,6 +20,56 @@ class ApiContractSelfCheckTests(APITestCase):
     def test_health_endpoint_ok(self):
         response = self.client.get("/health/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["status"], "ok")
+        self.assertIn("readiness_score", data)
+        self.assertIn("checks", data)
+
+    def test_readiness_endpoint_ok(self):
+        response = self.client.get("/api/v1/platform/readiness/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("score", response.data)
+        self.assertIn("deployment_tier", response.data)
+        self.assertGreaterEqual(response.data["score"], 0)
+
+    def test_capabilities_includes_tier_ladder(self):
+        response = self.client.get("/api/v1/platform/capabilities/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("PLATINUM", response.data["tier_ladder"])
+        self.assertIn("deployment_readiness", response.data)
+
+    def test_platinum_automation_upgrade(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            email="platinum@elitefintech.co.ug",
+            password="demo12345",
+            name="Platinum Automation",
+        )
+        org = Organization.objects.create(
+            name="Platinum Org",
+            slug="platinum-org",
+            country="UG",
+            province="CENTRAL",
+        )
+        Membership.objects.create(user=user, organization=org, role=Role.OWNER)
+
+        refresh = RefreshToken.for_user(user)
+        refresh["organization_id"] = str(org.id)
+        refresh["role"] = Role.OWNER
+        access = refresh.access_token
+        access["organization_id"] = str(org.id)
+        access["role"] = Role.OWNER
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+
+        response = self.client.post(
+            "/api/v1/platform/setup/apply/",
+            {"upgrade_tier": "PLATINUM", "automation_agent": "cursor"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("target_tier"), "PLATINUM")
+        self.assertIn("deploy_actions", response.data)
+        self.assertEqual(response.data["environment"].get("PLATFORM_TIER"), "PLATINUM")
 
     def test_invalid_login_returns_401(self):
         response = self.client.post(

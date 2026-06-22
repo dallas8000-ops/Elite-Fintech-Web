@@ -35,11 +35,25 @@ class VerifyDomainSerializer(serializers.Serializer):
 
 class SetupApplySerializer(serializers.Serializer):
     transfer_token = serializers.CharField(required=False)
-    target_domain = serializers.CharField(max_length=255)
+    target_domain = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    upgrade_tier = serializers.ChoiceField(
+        choices=["PLATINUM"],
+        required=False,
+        help_text="Tier upgrade via automation (no domain required)",
+    )
     api_subdomain = serializers.CharField(max_length=64, default="api", required=False)
     app_subdomain = serializers.CharField(max_length=64, default="app", required=False)
     automation_agent = serializers.CharField(max_length=128, required=False, allow_blank=True)
     completed_steps = serializers.ListField(child=serializers.CharField(), required=False)
+
+    def validate(self, attrs):
+        upgrade = attrs.get("upgrade_tier")
+        domain = (attrs.get("target_domain") or "").strip()
+        if not upgrade and not domain:
+            raise serializers.ValidationError(
+                {"target_domain": "Required unless upgrade_tier is set"}
+            )
+        return attrs
 
 
 class SetupTransferSerializer(serializers.ModelSerializer):

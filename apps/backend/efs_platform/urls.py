@@ -5,12 +5,14 @@ from efs_platform.views import (
     DomainListView,
     DomainVerifyView,
     OpenApiView,
+    ReadinessView,
     SetupApplyView,
     SetupTransferView,
 )
 
 urlpatterns = [
     path("capabilities/", CapabilitiesView.as_view()),
+    path("readiness/", ReadinessView.as_view()),
     path("openapi/", OpenApiView.as_view()),
     path("setup/", SetupTransferView.as_view()),
     path("setup/apply/", SetupApplyView.as_view()),

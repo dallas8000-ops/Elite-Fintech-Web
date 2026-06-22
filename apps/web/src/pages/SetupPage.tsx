@@ -26,6 +26,25 @@ export default function SetupPage() {
     load();
   }, []);
 
+  const [tierUpgrading, setTierUpgrading] = useState(false);
+
+  const handlePlatinumUpgrade = async () => {
+    setTierUpgrading(true);
+    setError("");
+    try {
+      const data = await api.applySetup({
+        upgrade_tier: "PLATINUM",
+        automation_agent: "cursor",
+        completed_steps: ["readiness_check"],
+      });
+      setManifest(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "PLATINUM upgrade failed");
+    } finally {
+      setTierUpgrading(false);
+    }
+  };
+
   const handleApply = async (e: FormEvent) => {
     e.preventDefault();
     setApplying(true);
@@ -64,7 +83,10 @@ export default function SetupPage() {
       <div className="border-b border-border bg-surface-raised/40">
         <div className="max-w-4xl mx-auto px-6 py-3">
           <h1 className="font-semibold">Domain & automation setup</h1>
-          <p className="text-xs text-muted">ENTERPRISE · AI-ready setup transfer</p>
+          <p className="text-xs text-muted">
+            {manifest?.platform_tier ?? "ENTERPRISE"} · AI-ready setup transfer
+            {manifest?.readiness_score != null ? ` · readiness ${manifest.readiness_score}/100` : ""}
+          </p>
         </div>
       </div>
 
@@ -80,6 +102,22 @@ export default function SetupPage() {
             {error}
           </div>
         )}
+
+        <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-5 text-sm text-violet-200">
+          <h2 className="font-semibold text-white mb-2">PLATINUM tier upgrade (automation)</h2>
+          <p className="mb-4 text-violet-100/80">
+            Run the Setup Transfer API with <code className="text-violet-300">automation_agent=cursor</code> to
+            generate Railway env vars and unlock institutional capabilities.
+          </p>
+          <button
+            type="button"
+            onClick={handlePlatinumUpgrade}
+            disabled={tierUpgrading}
+            className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 px-6 py-2.5 rounded-lg font-medium text-white"
+          >
+            {tierUpgrading ? "Upgrading…" : "Apply PLATINUM via automation"}
+          </button>
+        </div>
 
         <form onSubmit={handleApply} className="bg-surface-raised border border-border rounded-xl p-6 space-y-4">
           <h2 className="font-semibold">1. Link your domain</h2>
@@ -154,6 +192,18 @@ export default function SetupPage() {
                 </div>
               ))}
             </section>
+
+            {manifest.deploy_actions?.railway && (
+              <section className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-6">
+                <h2 className="font-semibold mb-4">Railway deploy actions</h2>
+                <pre className="text-xs bg-surface-overlay p-4 rounded-lg overflow-x-auto">
+                  {JSON.stringify(manifest.deploy_actions.railway, null, 2)}
+                </pre>
+                {manifest.message && (
+                  <p className="text-sm text-muted mt-3">{manifest.message}</p>
+                )}
+              </section>
+            )}
 
             <section className="bg-surface-raised border border-border rounded-xl p-6">
               <h2 className="font-semibold mb-4">5. Environment (deploy / AI automation)</h2>
