@@ -25,3 +25,16 @@ Delete it in the Railway dashboard (Project settings → Delete). The live app s
 
 - A separate Railway project per app — **not needed** unless you want billing/isolation boundaries later.
 - Merging api + web into one service — possible but worse for deploys; api/web/db as named services is the standard monorepo pattern.
+
+## Deploy failed: Healthcheck failure
+
+1. **DATABASE_URL** — after renaming Postgres to `elite-fintech-systems-db`, set on the API service:
+   ```
+   DATABASE_URL=${{elite-fintech-systems-db.DATABASE_URL}}
+   ```
+   The old `${{Postgres-Fintech.DATABASE_URL}}` reference breaks new deploys.
+
+2. Save variables, then **Redeploy** `elite-fintech-systems-api`.
+
+3. `/health/` returns HTTP 200 for Railway liveness; deep checks are at `/health/ready/`.
+
