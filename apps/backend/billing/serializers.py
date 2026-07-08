@@ -47,12 +47,20 @@ class CheckoutSerializer(serializers.Serializer):
     tier = serializers.ChoiceField(choices=["STARTER", "PRO", "ENTERPRISE"])
     rail = serializers.ChoiceField(
         choices=[
-            "INSTANT_EFT", "PAYSHAP", "DEBIT_ORDER", "EFT", "RNCS", "CARD",
+            "INSTANT_EFT",
+            "PAYSHAP",
+            "DEBIT_ORDER",
+            "EFT",
+            "RNCS",
+            "CARD",
+            "MOBILE_MONEY",
+            "USSD",
+            "AGENT_CASH",
         ],
         default="INSTANT_EFT",
     )
     provider = serializers.ChoiceField(
-        choices=["PAYFAST", "STRIPE", "OZOW", "PEACH_PAYMENTS"],
+        choices=["PAYFAST", "STRIPE", "OZOW", "PEACH_PAYMENTS", "FLUTTERWAVE"],
         required=False,
         allow_null=True,
     )

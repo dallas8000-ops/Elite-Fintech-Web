@@ -4,9 +4,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-change-in-production")
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
@@ -14,6 +13,10 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 # ── Hosts (VPS / Fly.io / custom domain) ─────────────────────────────────────
 _hosts = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _hosts.split(",") if h.strip()]
+
+_ngrok_domain = os.getenv("NGROK_DOMAIN", "").strip()
+if _ngrok_domain and _ngrok_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_ngrok_domain)
 
 for _env_host in (
     os.getenv("FLY_APP_NAME"),
@@ -36,6 +39,14 @@ CSRF_TRUSTED_ORIGINS = [u.strip() for u in _csrf.split(",") if u.strip()]
 _client = os.getenv("CLIENT_URL", "")
 if _client and _client not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(_client)
+# Local Vite dev ports — needed for Django admin POST via proxy (not only when DEBUG=True).
+_local_client = _client.startswith("http://localhost") or _client.startswith("http://127.0.0.1")
+if DEBUG or _local_client:
+    CSRF_TRUSTED_ORIGINS.extend(
+        f"http://localhost:{port}"
+        for port in range(5173, 5190)
+        if f"http://localhost:{port}" not in CSRF_TRUSTED_ORIGINS
+    )
 
 INSTALLED_APPS = [
     "daphne",
@@ -148,6 +159,13 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [os.getenv("CLIENT_URL", "http://localhost:5173")]
+_local_client = (os.getenv("CLIENT_URL", "") or "").startswith(("http://localhost", "http://127.0.0.1"))
+if DEBUG or _local_client:
+    CORS_ALLOWED_ORIGINS.extend(
+        f"http://localhost:{port}"
+        for port in range(5173, 5190)
+        if f"http://localhost:{port}" not in CORS_ALLOWED_ORIGINS
+    )
 CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {

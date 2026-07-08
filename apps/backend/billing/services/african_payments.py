@@ -221,10 +221,11 @@ def rails_for_checkout() -> list[dict]:
     from billing.services.payfast import is_payfast_configured
     from billing.services.regional import is_east_africa, is_south_africa
     from billing.services.stripe_service import is_stripe_configured
+    from sacco.services.payments.flutterwave import is_flutterwave_configured
 
     payfast = is_payfast_configured()
     stripe = is_stripe_configured()
-    flutterwave = bool(os.getenv("FLUTTERWAVE_SECRET_KEY"))
+    flutterwave = is_flutterwave_configured()
 
     result = []
     for rail in _primary_rails():

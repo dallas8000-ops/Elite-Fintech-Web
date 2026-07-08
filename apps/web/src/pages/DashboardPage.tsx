@@ -79,6 +79,8 @@ export default function DashboardPage() {
 
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
   const [filteredEvents, setFilteredEvents] = useState<PaymentEvent[] | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   const checkoutStatus = searchParams.get("checkout");
   const checkoutRail = searchParams.get("rail");
@@ -131,9 +133,21 @@ export default function DashboardPage() {
   const subscription = realtime.subscription ?? stats?.subscription;
 
   const handleCheckout = async (tier: string, rail: string) => {
-    const provider = rail === "CARD" ? "STRIPE" : undefined;
-    const { url } = await api.checkout(tier, rail, provider);
-    window.location.href = url;
+    const key = `${tier}:${rail}`;
+    setCheckoutError("");
+    setCheckoutLoading(key);
+    try {
+      const provider = rail === "CARD" ? "STRIPE" : undefined;
+      const { url } = await api.checkout(tier, rail, provider);
+      if (!url) {
+        throw new Error("Checkout did not return a payment URL.");
+      }
+      const target = url.startsWith("/") ? `${window.location.origin}${url}` : url;
+      window.location.assign(target);
+    } catch (e) {
+      setCheckoutError(e instanceof Error ? e.message : "Checkout failed");
+      setCheckoutLoading(null);
+    }
   };
 
   if (loading) {
@@ -249,6 +263,11 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </p>
+                {checkoutError && (
+                  <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-4 py-3 text-sm">
+                    {checkoutError}
+                  </div>
+                )}
                 <div className="space-y-3">
                   {plans.map((plan) => (
                     <div key={plan.tier} className="bg-surface-overlay border border-border rounded-lg p-4">
@@ -262,15 +281,21 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {(plan.recommended_rails ?? []).map((rail) => (
+                        {(plan.recommended_rails ?? []).map((rail) => {
+                          const key = `${plan.tier}:${rail}`;
+                          const loading = checkoutLoading === key;
+                          return (
                           <button
                             key={rail}
+                            type="button"
+                            disabled={loading}
                             onClick={() => handleCheckout(plan.tier, rail)}
-                            className="text-xs px-3 py-1.5 rounded bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30"
+                            className="text-xs px-3 py-1.5 rounded bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 disabled:opacity-50"
                           >
-                            {PAYMENT_RAIL_LABELS[rail] ?? rail}
+                            {loading ? "Starting…" : (PAYMENT_RAIL_LABELS[rail] ?? rail)}
                           </button>
-                        ))}
+                          );
+                        })}
                         {(!plan.recommended_rails || plan.recommended_rails.length === 0) && (
                           <span className="text-xs text-muted">Configure Flutterwave in backend .env</span>
                         )}

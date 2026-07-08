@@ -40,7 +40,9 @@ from billing.services.regional import (
 
 )
 
+from billing.services.flutterwave_checkout import create_flutterwave_subscription_checkout
 from billing.services.stripe_service import get_stripe_client, is_stripe_configured
+from sacco.services.payments.flutterwave import is_flutterwave_configured
 
 from django.conf import settings
 
@@ -348,7 +350,7 @@ class CheckoutView(APIView):
 
         if is_east_africa():
 
-            if not os.getenv("FLUTTERWAVE_SECRET_KEY"):
+            if not is_flutterwave_configured():
 
                 return Response(
 
@@ -356,9 +358,11 @@ class CheckoutView(APIView):
 
                         "error": (
 
-                            "Flutterwave not configured. Add FLUTTERWAVE_SECRET_KEY for "
+                            "Flutterwave not configured. Add FLUTTERWAVE_CLIENT_ID and "
 
-                            f"MoMo checkout ({org.country})."
+                            "FLUTTERWAVE_CLIENT_SECRET (v4 sandbox) or FLUTTERWAVE_SECRET_KEY "
+
+                            f"for MoMo checkout ({org.country})."
 
                         ),
 
@@ -372,23 +376,23 @@ class CheckoutView(APIView):
 
                 )
 
-            return Response(
+            try:
+                checkout = create_flutterwave_subscription_checkout(
+                    organization=org,
+                    tier=data["tier"],
+                    rail=rail,
+                    email=request.user.email,
+                    plan=plan,
+                    client_nonce=data.get("client_nonce"),
+                )
+            except RuntimeError as exc:
+                logger.warning("Flutterwave checkout failed for org %s: %s", org.id, exc)
+                return Response(
+                    {"error": str(exc), "rail": rail, "provider": "FLUTTERWAVE"},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
 
-                {
-
-                    "error": "Flutterwave checkout integration pending — configure webhook + payment link API.",
-
-                    "rail": rail,
-
-                    "provider": "FLUTTERWAVE",
-
-                    "country": org.country,
-
-                },
-
-                status=status.HTTP_501_NOT_IMPLEMENTED,
-
-            )
+            return Response(checkout)
 
 
 

@@ -356,7 +356,12 @@ export const api = {
       "/api/v1/billing/checkout/",
       {
         method: "POST",
-        body: JSON.stringify({ tier, rail, provider }),
+        body: JSON.stringify({
+          tier,
+          rail,
+          provider,
+          client_nonce: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        }),
       }
     ),
 
@@ -465,11 +470,12 @@ export function getWsUrl(token: string): string {
   return `${proto}://${window.location.host}/ws/billing/?token=${token}`;
 }
 
-/** Django admin lives on the API host, not the Vite dev server. */
+/** Django admin — open API host directly in dev to avoid Vite proxy CSRF issues. */
 export function getAdminUrl(): string {
   const base = import.meta.env.VITE_API_URL;
   if (base) return `${String(base).replace(/\/$/, "")}/admin/`;
-  return "http://localhost:8000/admin/";
+  if (import.meta.env.DEV) return "http://127.0.0.1:8001/admin/";
+  return "/admin/";
 }
 
 export function formatMoney(amountMinor: number | null, currency = "ugx"): string {

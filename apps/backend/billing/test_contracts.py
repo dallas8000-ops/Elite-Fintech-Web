@@ -117,7 +117,7 @@ class ApiContractSelfCheckTests(APITestCase):
 
 
 class FlutterwaveContractSelfCheckTests(APITestCase):
-    """East Africa checkout must fail predictably until Flutterwave is fully integrated."""
+    """East Africa checkout uses Flutterwave hosted payment links when configured."""
 
     def _auth_header_for(self, user, org_id: str, role: str) -> str:
         refresh = RefreshToken.for_user(user)
@@ -128,8 +128,16 @@ class FlutterwaveContractSelfCheckTests(APITestCase):
         access["role"] = role
         return f"Bearer {access}"
 
+    @patch("billing.views.create_flutterwave_subscription_checkout")
     @patch.dict("os.environ", {"FLUTTERWAVE_SECRET_KEY": "test-secret-key", "MARKET": "EA"}, clear=False)
-    def test_flutterwave_checkout_returns_501_not_500(self):
+    def test_flutterwave_checkout_returns_payment_link(self, mock_checkout):
+        mock_checkout.return_value = {
+            "url": "https://checkout.flutterwave.com/v3/hosted/pay/test",
+            "provider": "FLUTTERWAVE",
+            "rail": "MOBILE_MONEY",
+            "tx_ref": "efs_sub_test",
+            "env": "sandbox",
+        }
         user_model = get_user_model()
         user = user_model.objects.create_user(
             email="contract@elitefintech.co.ug",
@@ -147,15 +155,25 @@ class FlutterwaveContractSelfCheckTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=self._auth_header_for(user, org.id, Role.ADMIN))
         response = self.client.post(
             "/api/v1/billing/checkout/",
-            {"tier": "PRO", "rail": "INSTANT_EFT"},
+            {"tier": "PRO", "rail": "MOBILE_MONEY"},
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get("provider"), "FLUTTERWAVE")
-        self.assertIn("pending", response.data.get("error", "").lower())
+        self.assertIn("checkout.flutterwave.com", response.data.get("url", ""))
+        mock_checkout.assert_called_once()
 
-    @patch.dict("os.environ", {"FLUTTERWAVE_SECRET_KEY": "", "MARKET": "EA"}, clear=False)
+    @patch.dict(
+        "os.environ",
+        {
+            "FLUTTERWAVE_SECRET_KEY": "",
+            "FLUTTERWAVE_CLIENT_ID": "",
+            "FLUTTERWAVE_CLIENT_SECRET": "",
+            "MARKET": "EA",
+        },
+        clear=False,
+    )
     def test_flutterwave_missing_config_returns_503(self):
         user_model = get_user_model()
         user = user_model.objects.create_user(

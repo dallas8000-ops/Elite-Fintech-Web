@@ -63,7 +63,15 @@ class CollectionsApiTests(APITestCase):
         self.assertEqual(listing.status_code, status.HTTP_200_OK)
         self.assertEqual(len(listing.data["members"]), 2)
 
-    @patch.dict("os.environ", {"FLUTTERWAVE_SECRET_KEY": ""}, clear=False)
+    @patch.dict(
+        "os.environ",
+        {
+            "FLUTTERWAVE_SECRET_KEY": "",
+            "FLUTTERWAVE_CLIENT_ID": "",
+            "FLUTTERWAVE_CLIENT_SECRET": "",
+        },
+        clear=False,
+    )
     def test_initiate_without_flutterwave_returns_503(self):
         self.client.credentials(HTTP_AUTHORIZATION=self.auth)
         response = self.client.post(

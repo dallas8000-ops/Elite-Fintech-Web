@@ -24,7 +24,7 @@ INTENT_TTL_MINUTES = 15
 
 
 def tx_ref_for_intent(intent_id: uuid.UUID) -> str:
-    return f"efs_{intent_id.hex}"
+    return f"efs{intent_id.hex}"
 
 
 @transaction.atomic

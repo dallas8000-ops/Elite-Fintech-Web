@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from sacco.models import PaymentIntent, PaymentIntentStatus
 from sacco.services.intents import complete_intent_failed, complete_intent_success
 from sacco.services.payments.flutterwave import verify_webhook_signature
+from billing.services.flutterwave_checkout import handle_subscription_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +35,14 @@ class FlutterwaveWebhookView(APIView):
 
         event_type = payload.get("event") or payload.get("eventType") or ""
         data = payload.get("data") or payload
-        tx_ref = data.get("tx_ref") or data.get("txRef") or ""
+        tx_ref = data.get("tx_ref") or data.get("txRef") or data.get("reference") or ""
         flw_id = str(data.get("id") or data.get("transaction_id") or "")
         status_value = (data.get("status") or "").lower()
 
         if not tx_ref:
+            return HttpResponse("OK")
+
+        if handle_subscription_webhook(data, payload):
             return HttpResponse("OK")
 
         intent = PaymentIntent.objects.filter(provider_reference=tx_ref).select_related("member", "organization").first()
@@ -46,7 +50,7 @@ class FlutterwaveWebhookView(APIView):
             logger.warning("Flutterwave webhook: unknown tx_ref %s", tx_ref)
             return HttpResponse("OK")
 
-        if event_type == "charge.completed" or status_value == "successful":
+        if event_type == "charge.completed" or status_value in ("successful", "success", "succeeded"):
             complete_intent_success(intent, provider_transaction_id=flw_id or intent.provider_transaction_id, raw=payload)
         elif status_value in ("failed", "cancelled") or event_type.endswith("failed"):
             complete_intent_failed(intent, reason=status_value or event_type, raw=payload)

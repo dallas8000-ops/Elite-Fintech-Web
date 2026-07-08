@@ -10,6 +10,8 @@
     "seed": "cd apps/backend && python manage.py seed_demo",
     "test:backend": "cd apps/backend && python manage.py test",
     "smoke": "cd apps/backend && python manage.py seed_demo && python scripts/smoke_live.py",
+    "smoke:full": "cd apps/backend && python manage.py seed_demo && python scripts/full_smoke.py",
+    "dev:ngrok": "cd apps/backend && powershell -ExecutionPolicy Bypass -File scripts/start-ngrok.ps1",
     "automation:platinum": "cd apps/backend && python scripts/automation_platinum_upgrade.py",
     "check": "npm run check:backend && npm run check:web",
     "check:backend": "cd apps/backend && python scripts/self_check.py",

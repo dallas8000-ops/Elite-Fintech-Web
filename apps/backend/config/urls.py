@@ -1,8 +1,13 @@
 from django.contrib import admin
 from django.urls import include, path
 
+from billing.flutterwave_hosted import FlutterwaveHostedPayView, FlutterwavePayOtpView, FlutterwavePayStatusView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("billing/flutterwave/pay/", FlutterwaveHostedPayView.as_view()),
+    path("billing/flutterwave/pay/otp/", FlutterwavePayOtpView.as_view()),
+    path("billing/flutterwave/pay/status/", FlutterwavePayStatusView.as_view()),
     path("api/v1/auth/", include("accounts.urls")),
     path("api/v1/billing/", include("billing.urls")),
     path("api/v1/members/", include("sacco.member_urls")),

@@ -9,12 +9,13 @@ from billing.services.fx_rates import rates_public_payload
 from billing.services.payfast import is_payfast_configured
 from billing.services.regional import default_currency, get_plans, is_east_africa, resolve_country
 from billing.services.stripe_service import is_stripe_configured
+from sacco.services.payments.flutterwave import is_flutterwave_configured
 
 
 def get_available_plans(country: str | None = None) -> list[dict]:
     code = resolve_country(country)
     cur = default_currency(code)
-    flutterwave = bool(os.getenv("FLUTTERWAVE_SECRET_KEY"))
+    flutterwave = is_flutterwave_configured()
     payfast = is_payfast_configured()
     stripe = is_stripe_configured()
 

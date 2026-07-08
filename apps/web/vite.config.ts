@@ -7,10 +7,13 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": { target: "http://localhost:8000", changeOrigin: true },
-      "/webhooks": { target: "http://localhost:8000", changeOrigin: true },
-      "/health": { target: "http://localhost:8000", changeOrigin: true },
-      "/ws": { target: "ws://localhost:8000", ws: true },
+      "/api": { target: "http://localhost:8001", changeOrigin: true },
+      "/admin": { target: "http://localhost:8001", changeOrigin: true },
+      "/static": { target: "http://localhost:8001", changeOrigin: true },
+      "/webhooks": { target: "http://localhost:8001", changeOrigin: true },
+      "/billing": { target: "http://localhost:8001", changeOrigin: true },
+      "/health": { target: "http://localhost:8001", changeOrigin: true },
+      "/ws": { target: "ws://localhost:8001", ws: true },
     },
   },
 });
