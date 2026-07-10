@@ -35,8 +35,8 @@ Elite Fintech Systems is designed for:
 | Real-time billing feed | Implemented | Django Channels WebSocket endpoint |
 | Stripe checkout | Implemented (secondary) | Optional fallback for international card use-cases; not the primary EA rail |
 | PayFast checkout (ZA legacy) | Implemented | Legacy South Africa flow only |
-| Flutterwave checkout (EA) | Planned / partial | Provider path and config checks exist, full checkout flow is pending |
-| Automated tests | Baseline implemented | Core auth/RBAC/pricing tests included; coverage is not complete |
+| Flutterwave checkout (EA) | Implemented | v4 OAuth (`FLUTTERWAVE_CLIENT_ID` + `FLUTTERWAVE_CLIENT_SECRET`), hosted checkout, MoMo charges, webhooks |
+| Automated tests | Baseline implemented | Core auth/RBAC/pricing/Flutterwave checkout tests included; coverage is not complete |
 
 ## East Africa first, South Africa legacy
 
@@ -70,7 +70,7 @@ This repository now defaults to East Africa:
 | API | Django 5, DRF, SimpleJWT |
 | Async / Real-time | Django Channels, Daphne, Redis |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
-| Payments | Stripe, PayFast (legacy ZA), Flutterwave (EA path/stubbed readiness) |
+| Payments | Flutterwave (EA primary, v4 OAuth), Stripe (optional card fallback), PayFast (legacy ZA) |
 | Data | SQLite (dev), PostgreSQL (prod) |
 | Infra | Docker Compose on VPS |
 
@@ -238,12 +238,25 @@ docker compose logs -f api
 docker compose ps
 ```
 
+## Flutterwave credentials (Railway)
+
+Prefer **v4 OAuth client credentials** (not legacy `FLWSECK` secret keys):
+
+```bash
+FLUTTERWAVE_CLIENT_ID=...
+FLUTTERWAVE_CLIENT_SECRET=...
+FLUTTERWAVE_ENV=sandbox   # or live
+FLUTTERWAVE_WEBHOOK_SECRET=...
+```
+
+Legacy `FLUTTERWAVE_SECRET_KEY` / `FLUTTERWAVE_PUBLIC_KEY` remain supported as a fallback when client credentials are unset.
+
 ## Roadmap priorities
 
-- Complete Flutterwave checkout integration for EA
 - Harden webhook verification and retry workflows
 - Expand test coverage for pricing, regional validation, and checkout paths
 - Expand tenant analytics and reconciliation tooling
+- Pesapal as an alternate EA aggregator path
 
 ## Security and compliance notes
 

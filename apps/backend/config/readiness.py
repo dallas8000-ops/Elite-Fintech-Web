@@ -85,6 +85,15 @@ def _stripe_ok() -> bool:
     return bool(os.getenv("STRIPE_SECRET_KEY", "").startswith("sk_"))
 
 
+def _flutterwave_ok() -> bool:
+    """Prefer v4 OAuth client credentials; accept legacy FLWSECK secret key as fallback."""
+    if os.getenv("FLUTTERWAVE_CLIENT_ID", "").strip() and os.getenv(
+        "FLUTTERWAVE_CLIENT_SECRET", ""
+    ).strip():
+        return True
+    return bool(os.getenv("FLUTTERWAVE_SECRET_KEY", "").strip())
+
+
 def _secret_key_ok() -> bool:
     key = os.getenv("SECRET_KEY", "")
     return key not in ("", "dev-insecure-change-in-production")
@@ -166,11 +175,19 @@ def run_readiness_checks() -> list[ReadinessCheck]:
             "Generate a strong SECRET_KEY",
         ),
         _check(
-            "stripe",
-            "Stripe billing configured",
+            "flutterwave",
+            "Flutterwave billing configured",
             10,
-            _stripe_ok(),
-            "Configure STRIPE_SECRET_KEY and webhook secret",
+            _flutterwave_ok(),
+            "Set FLUTTERWAVE_CLIENT_ID + FLUTTERWAVE_CLIENT_SECRET (v4 OAuth) "
+            "or FLUTTERWAVE_SECRET_KEY (legacy v3)",
+        ),
+        _check(
+            "stripe",
+            "Stripe billing configured (optional card fallback)",
+            4,
+            _stripe_ok() or _flutterwave_ok(),
+            "Optional: configure STRIPE_SECRET_KEY for international card fallback",
         ),
         _prod_check(
             is_prod,

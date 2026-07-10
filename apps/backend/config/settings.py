@@ -250,6 +250,10 @@ PAYFAST_MERCHANT_KEY = os.getenv("PAYFAST_MERCHANT_KEY", "")
 PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "")
 PAYFAST_SANDBOX = os.getenv("PAYFAST_SANDBOX", "True").lower() in ("true", "1", "yes")
 
+# Flutterwave v4 OAuth (preferred on Railway) — client credentials, not legacy FLWSECK keys.
+FLUTTERWAVE_CLIENT_ID = os.getenv("FLUTTERWAVE_CLIENT_ID", "")
+FLUTTERWAVE_CLIENT_SECRET = os.getenv("FLUTTERWAVE_CLIENT_SECRET", "")
+# Legacy v3 API keys (optional fallback when CLIENT_ID/SECRET are unset).
 FLUTTERWAVE_SECRET_KEY = os.getenv("FLUTTERWAVE_SECRET_KEY", "")
 FLUTTERWAVE_PUBLIC_KEY = os.getenv("FLUTTERWAVE_PUBLIC_KEY", "")
 FLUTTERWAVE_WEBHOOK_SECRET = os.getenv("FLUTTERWAVE_WEBHOOK_SECRET", "")
