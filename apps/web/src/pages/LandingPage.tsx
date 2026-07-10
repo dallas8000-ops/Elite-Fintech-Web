@@ -32,7 +32,7 @@ export default function LandingPage() {
         </h1>
         <p className="text-muted text-lg mt-6 max-w-2xl mx-auto leading-relaxed">
           Multi-tenant billing in local currency (UGX, KES, RWF, TZS). MTN MoMo, M-Pesa, USSD, and
-          Flutterwave rails — not US card SaaS. Real-time ops, domain white-label, AI setup APIs.
+          Flutterwave checkout — not US card SaaS. Real-time ops and domain white-label; setup automation is in beta.
         </p>
         <div className="flex flex-wrap justify-center gap-4 mt-10">
           <Link
@@ -65,12 +65,12 @@ export default function LandingPage() {
             body: "MTN MoMo, M-Pesa, Airtel Money, USSD — not card-on-file by default.",
           },
           {
-            title: "East Africa compliance",
-            body: "Data protection laws, local VAT (URA, KRA, RRA, TRA), central bank PSP rules.",
+            title: "East Africa-ready",
+            body: "Data protection–aligned org profiles, local tax ID fields, and PSP-aware payment routing — not a US SaaS template.",
           },
           {
-            title: "AI automation setup",
-            body: "Setup Transfer API links your domain, outputs DNS + env manifest for Cursor/CI.",
+            title: "Domain setup wizard",
+            body: "Transfer API outputs DNS targets and an env manifest for your deploy pipeline (beta).",
           },
         ].map((f) => (
           <div key={f.title} className="bg-surface-raised border border-border rounded-xl p-6 text-left">
@@ -232,14 +232,14 @@ export default function LandingPage() {
                   tier: "PRO" as const,
                   tagline: "Pro",
                   body: "Growing wallets and payment platforms — no custom domain yet.",
-                  features: ["Unlimited MoMo + USSD webhooks", "Flutterwave / Pesapal", "KYC + VAT reporting"],
+                  features: ["Unlimited MoMo + USSD webhooks", "Flutterwave checkout (Pesapal planned)", "Org profile + KYC status (admin-managed)"],
                   highlight: false,
                 },
                 {
                   tier: "ENTERPRISE" as const,
                   tagline: "Enterprise",
                   body: "This platform — banks, telcos, and licensed PSPs.",
-                  features: ["MoMo · USSD · agent rails", "Custom domain white-label", "AI automation setup API"],
+                  features: ["MoMo · USSD · agent rails", "Custom domain white-label", "Domain setup & env manifest (beta)"],
                   highlight: true,
                 },
               ] as const
@@ -310,7 +310,7 @@ export default function LandingPage() {
 
           <p className="text-center text-xs text-muted mt-8 max-w-lg mx-auto">
             <span className="text-white/70">Basic tier</span> (typical US card widgets ~$9–29/mo) lacks
-            mobile money, USSD, and East Africa compliance — not what this region needs.
+            mobile money and USSD-first flows — not what this region needs. Pesapal and automated VAT filing are on the roadmap, not live today.
           </p>
         </div>
       </section>
