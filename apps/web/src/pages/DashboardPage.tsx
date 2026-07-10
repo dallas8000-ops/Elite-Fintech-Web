@@ -297,7 +297,9 @@ export default function DashboardPage() {
                           );
                         })}
                         {(!plan.recommended_rails || plan.recommended_rails.length === 0) && (
-                          <span className="text-xs text-muted">Configure Flutterwave in backend .env</span>
+                          <span className="text-xs text-amber-400">
+                            Flutterwave not detected — set FLUTTERWAVE_CLIENT_ID + CLIENT_SECRET on the API Railway service, then redeploy
+                          </span>
                         )}
                       </div>
                     </div>

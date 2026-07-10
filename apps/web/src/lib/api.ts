@@ -187,6 +187,25 @@ export interface ReadinessReport {
   total: number;
   gaps: { id: string; label: string; fix: string }[];
   health_api?: string;
+  integrations?: {
+    flutterwave: {
+      provider: string;
+      configured: boolean;
+      mode: string;
+      env: string;
+      has_client_id: boolean;
+      has_client_secret: boolean;
+      has_legacy_secret_key: boolean;
+      has_webhook_secret: boolean;
+      fix: string | null;
+    };
+    stripe: {
+      provider: string;
+      configured: boolean;
+      optional?: boolean;
+      fix: string | null;
+    };
+  };
 }
 
 export interface SetupManifest {

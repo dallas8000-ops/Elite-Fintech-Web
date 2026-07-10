@@ -250,8 +250,7 @@ def rails_for_checkout() -> list[dict]:
         result.append(
             {
                 **rail,
-                "available": len(providers) > 0
-                or (is_east_africa() and rail["id"] in ("MOBILE_MONEY", "USSD")),
+                "available": len(providers) > 0,
                 "checkout_providers": providers,
             }
         )

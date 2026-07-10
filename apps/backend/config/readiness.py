@@ -94,6 +94,43 @@ def _flutterwave_ok() -> bool:
     return bool(os.getenv("FLUTTERWAVE_SECRET_KEY", "").strip())
 
 
+def flutterwave_integration_status() -> dict:
+    """Public status for UI — never returns secret values."""
+    client_id = bool(os.getenv("FLUTTERWAVE_CLIENT_ID", "").strip())
+    client_secret = bool(os.getenv("FLUTTERWAVE_CLIENT_SECRET", "").strip())
+    legacy_key = bool(os.getenv("FLUTTERWAVE_SECRET_KEY", "").strip())
+    webhook = bool(os.getenv("FLUTTERWAVE_WEBHOOK_SECRET", "").strip())
+    env = (os.getenv("FLUTTERWAVE_ENV", "sandbox") or "sandbox").lower()
+
+    if client_id and client_secret:
+        mode = "oauth_v4"
+        configured = True
+        fix = None
+    elif legacy_key:
+        mode = "legacy_secret_key"
+        configured = True
+        fix = "Prefer FLUTTERWAVE_CLIENT_ID + FLUTTERWAVE_CLIENT_SECRET on the API Railway service"
+    else:
+        mode = "missing"
+        configured = False
+        fix = (
+            "Set FLUTTERWAVE_CLIENT_ID and FLUTTERWAVE_CLIENT_SECRET on the "
+            "API Railway service (not the web service), then redeploy"
+        )
+
+    return {
+        "provider": "FLUTTERWAVE",
+        "configured": configured,
+        "mode": mode,
+        "env": env,
+        "has_client_id": client_id,
+        "has_client_secret": client_secret,
+        "has_legacy_secret_key": legacy_key,
+        "has_webhook_secret": webhook,
+        "fix": fix,
+    }
+
+
 def _secret_key_ok() -> bool:
     key = os.getenv("SECRET_KEY", "")
     return key not in ("", "dev-insecure-change-in-production")
@@ -240,4 +277,15 @@ def readiness_summary() -> dict:
         "passed": len(checks) - len(failed),
         "total": len(checks),
         "gaps": [{"id": c["id"], "label": c["label"], "fix": c["fix"]} for c in failed if c["fix"]],
+        "integrations": {
+            "flutterwave": flutterwave_integration_status(),
+            "stripe": {
+                "provider": "STRIPE",
+                "configured": _stripe_ok(),
+                "optional": True,
+                "fix": None
+                if _stripe_ok() or _flutterwave_ok()
+                else "Optional: set STRIPE_SECRET_KEY for international card fallback",
+            },
+        },
     }

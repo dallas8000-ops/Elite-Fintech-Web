@@ -140,7 +140,10 @@ class InitiateCollectionView(APIView):
         if not is_flutterwave_configured():
             return Response(
                 {
-                    "error": "Flutterwave not configured. Add FLUTTERWAVE_SECRET_KEY to .env.",
+                    "error": (
+                        "Flutterwave not configured. Set FLUTTERWAVE_CLIENT_ID and "
+                        "FLUTTERWAVE_CLIENT_SECRET on the API Railway service, then redeploy."
+                    ),
                     "provider": "FLUTTERWAVE",
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,

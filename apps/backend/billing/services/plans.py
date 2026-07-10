@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from billing.services.african_payments import EA_PRIMARY_RAILS, SA_PRIMARY_RAILS
+from billing.services.african_payments import SA_PRIMARY_RAILS
 from billing.services.fx_rates import rates_public_payload
 from billing.services.payfast import is_payfast_configured
 from billing.services.regional import default_currency, get_plans, is_east_africa, resolve_country
@@ -20,16 +20,13 @@ def get_available_plans(country: str | None = None) -> list[dict]:
     stripe = is_stripe_configured()
 
     if is_east_africa():
-        rail_ids = [r["id"] for r in EA_PRIMARY_RAILS]
         fx = rates_public_payload()
         plans = []
         for p in get_plans(code):
-            rails = []
+            rails: list[str] = []
             if flutterwave:
                 rails.extend(["MOBILE_MONEY", "USSD", "CARD"])
-            else:
-                rails.extend(rail_ids[:2])
-            if stripe:
+            if stripe and "CARD" not in rails:
                 rails.append("CARD")
             plans.append(
                 {
@@ -38,7 +35,8 @@ def get_available_plans(country: str | None = None) -> list[dict]:
                     "country": code,
                     "amount_display": _format(p["amount_cents"], code),
                     "recommended_rails": list(dict.fromkeys(rails)),
-                    "providers": [],
+                    "providers": ["FLUTTERWAVE"] if flutterwave else [],
+                    "flutterwave_configured": flutterwave,
                     "pricing_mode": fx.get("pricing_mode", "static"),
                     "fx_trading_date": fx.get("trading_date"),
                     "fx_source": fx.get("source"),

@@ -114,8 +114,41 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-            {(readiness?.gaps?.length ?? caps.upgrade_hints?.length) ? (
+            {(readiness?.gaps?.length ?? caps.upgrade_hints?.length) || readiness?.integrations ? (
               <div className="mt-8 bg-surface-raised border border-border rounded-xl p-5">
+                <p className="text-xs uppercase tracking-widest text-muted mb-3">Live integration status</p>
+                {readiness?.integrations?.flutterwave && (
+                  <div className="mb-4 space-y-2 text-sm">
+                    <p
+                      className={
+                        readiness.integrations.flutterwave.configured
+                          ? "text-emerald-400"
+                          : "text-amber-400"
+                      }
+                    >
+                      Flutterwave:{" "}
+                      {readiness.integrations.flutterwave.configured
+                        ? `connected (${readiness.integrations.flutterwave.mode}, ${readiness.integrations.flutterwave.env})`
+                        : "not detected"}
+                    </p>
+                    <p className="text-xs text-muted font-mono">
+                      client_id={readiness.integrations.flutterwave.has_client_id ? "yes" : "no"}
+                      {" · "}
+                      client_secret={
+                        readiness.integrations.flutterwave.has_client_secret ? "yes" : "no"
+                      }
+                      {" · "}
+                      webhook={
+                        readiness.integrations.flutterwave.has_webhook_secret ? "yes" : "no"
+                      }
+                    </p>
+                    {readiness.integrations.flutterwave.fix && (
+                      <p className="text-xs text-amber-400/90">
+                        {readiness.integrations.flutterwave.fix}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p className="text-xs uppercase tracking-widest text-muted mb-3">Upgrade path</p>
                 <ul className="space-y-2 text-sm text-muted">
                   {(readiness?.gaps ?? []).slice(0, 3).map((gap) => (
