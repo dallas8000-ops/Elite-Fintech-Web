@@ -1,0 +1,137 @@
+erDiagram
+  RevokedRefreshToken {
+    CharField jti
+    DateTimeField revoked_at
+  }
+  FxRateSnapshot {
+    UUIDField id
+    CharField base_currency
+    JSONField rates
+    CharField source
+    DateField trading_date
+    DateTimeField fetched_at
+  }
+  Subscription {
+    UUIDField id
+    OneToOneField organization
+    CharField external_subscription_id
+    CharField external_price_id
+    CharField payment_provider
+    CharField plan_tier
+    CharField status
+    PositiveIntegerField amount_cents
+    CharField currency
+    PositiveIntegerField vat_cents
+    DateTimeField current_period_start
+    DateTimeField current_period_end
+  }
+  PaymentEvent {
+    UUIDField id
+    ForeignKey organization
+    CharField type
+    PositiveIntegerField amount
+    PositiveIntegerField vat_amount
+    CharField currency
+    CharField payment_provider
+    CharField payment_rail
+    CharField settlement_status
+    CharField external_event_id
+    JSONField metadata
+    DateTimeField created_at
+  }
+  OrganizationDomain {
+    UUIDField id
+    ForeignKey organization
+    CharField hostname
+    CharField domain_type
+    CharField status
+    CharField verification_token
+    DateTimeField verified_at
+    BooleanField is_primary
+    DateTimeField created_at
+  }
+  SetupTransfer {
+    UUIDField id
+    OneToOneField organization
+    CharField transfer_token
+    CharField target_domain
+    CharField api_subdomain
+    CharField app_subdomain
+    CharField automation_agent
+    JSONField completed_steps
+    JSONField metadata
+    DateTimeField created_at
+    DateTimeField updated_at
+  }
+  Organization {
+    UUIDField id
+    CharField name
+    SlugField slug
+    CharField cipc_registration_number
+    CharField vat_number
+    CharField province
+    CharField country
+    CharField industry_sector
+    DateTimeField popia_consent_at
+    CharField fica_status
+    DateTimeField fica_verified_at
+    CharField stripe_customer_id
+  }
+  Membership {
+    UUIDField id
+    ForeignKey user
+    ForeignKey organization
+    CharField role
+    DateTimeField created_at
+  }
+  SaccoMember {
+    UUIDField id
+    ForeignKey organization
+    CharField member_number
+    CharField full_name
+    CharField phone
+    CharField momo_network
+    CharField status
+    DateField joined_at
+    JSONField metadata
+    DateTimeField created_at
+    DateTimeField updated_at
+  }
+  CollectionProduct {
+    UUIDField id
+    ForeignKey organization
+    CharField name
+    PositiveIntegerField amount_minor
+    CharField currency
+    CharField frequency
+    BooleanField vat_inclusive
+    BooleanField is_active
+    DateTimeField created_at
+    DateTimeField updated_at
+  }
+  PaymentIntent {
+    UUIDField id
+    CharField idempotency_key
+    ForeignKey organization
+    ForeignKey member
+    ForeignKey product
+    PositiveIntegerField amount_minor
+    CharField currency
+    CharField rail
+    CharField provider
+    CharField status
+    CharField provider_reference
+    CharField provider_transaction_id
+  }
+  LedgerEntry {
+    UUIDField id
+    ForeignKey organization
+    ForeignKey member
+    ForeignKey payment_intent
+    CharField entry_type
+    PositiveIntegerField amount_minor
+    IntegerField balance_after
+    CharField description
+    CharField external_reference
+    DateTimeField created_at
+  }
