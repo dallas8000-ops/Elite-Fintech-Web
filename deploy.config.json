@@ -13,7 +13,7 @@
   },
   "platform": "railway",
   "postgres": {
-    "provider": "neon",
+    "provider": "railway",
     "connectionEnvVar": "DATABASE_URL",
     "autoProvision": true
   },

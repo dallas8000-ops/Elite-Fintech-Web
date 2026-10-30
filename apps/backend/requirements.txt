@@ -11,3 +11,4 @@ python-dotenv>=1.0,<2
 psycopg2-binary>=2.9,<3
 dj-database-url>=2.2,<3
 whitenoise>=6.8,<7
+sentry-sdk

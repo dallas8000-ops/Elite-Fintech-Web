@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-06-22T05:48:21.358219+00:00",
-  "updatedAt": "2026-07-10T19:17:08.555022+00:00",
+  "updatedAt": "2026-10-02T15:13:31.359135+00:00",
   "accountId": "acct_1TVQpaRxznXvj6jh",
   "products": [
     {
@@ -57,7 +57,7 @@
     }
   ],
   "webhookEndpoint": {
-    "id": "we_1Trjv6RxznXvj6jhrSokQiTt",
+    "id": "we_1UM89PRxznXvj6jhOzqZdSmx",
     "url": "https://elite-fintech-api-production.up.railway.app/webhooks/stripe/",
     "reused": false
   },
